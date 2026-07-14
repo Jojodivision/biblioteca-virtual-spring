@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Datos del Libro</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h2>Completar la información del Libro</h2>
+    
+    <form th:action="@{/guardar}" th:object="${libro}" method="post">
+        
+        <input type="hidden" th:field="*{idLibro}"/>
+        
+        <label for="titulo">Título:</label>
+        <input type="text" th:field="*{titulo}" required="true"/>
+        <br><br>
+        
+        <label for="autor">Autor:</label>
+        <input type="text" th:field="*{autor}" required="true"/>
+        <br><br>
+        
+        <label for="editorial">Editorial:</label>
+        <input type="text" th:field="*{editorial}"/>
+        <br><br>
+        
+        <label for="anioPublicacion">Año de Publicación:</label>
+        <input type="number" th:field="*{anioPublicacion}"/>
+        <br><br>
+        
+        <label for="cantidad">Cantidad Disponible:</label>
+        <input type="number" th:field="*{cantidad}"/>
+        <br><br>
+        
+        <input type="submit" value="Guardar Libro"/>
+    </form>
+    
+    <br>
+    <a th:href="@{/}">Volver al catálogo</a>
+</body>
+</html>

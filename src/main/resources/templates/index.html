@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Biblioteca Virtual</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>Catálogo de la Biblioteca Virtual</h1>
+    <a th:href="@{/agregar}">Agregar Nuevo Libro</a>
+    <br><br>
+    <div th:if="${libros != null and !libros.empty}">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Editorial</th>
+                    <th>Año</th>
+                    <th>Disponibles</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="libro : ${libros}">
+                    <td th:text="${libro.idLibro}">1</td>
+                    <td th:text="${libro.titulo}">Título del Libro</td>
+                    <td th:text="${libro.autor}">Autor del Libro</td>
+                    <td th:text="${libro.editorial}">Editorial</td>
+                    <td th:text="${libro.anioPublicacion}">2026</td>
+                    <td th:text="${libro.cantidad}">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div th:if="${libros == null or libros.empty}">
+        <p>El catálogo está vacío. ¡Pronto agregaremos libros!</p>
+    </div>
+</body>
+</html>
