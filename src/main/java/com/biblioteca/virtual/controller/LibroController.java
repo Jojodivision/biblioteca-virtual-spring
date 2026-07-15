@@ -47,4 +47,8 @@ public class LibroController {
         // Redirigimos a la página principal para ver la tabla actualizada
         return "redirect:/";
     }
+    @GetMapping("/login")
+    public String login() {
+        return "login"; // Busca el archivo login.html 
+    }
 }
