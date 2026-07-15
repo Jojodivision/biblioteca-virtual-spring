@@ -37,21 +37,20 @@ public class SecurityConfig {
 
     // Configuramos las reglas de las rutas (URLs)
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeHttpRequests(auth -> auth
-                // Por ahora, cualquier petición a la página requiere estar autenticado
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests((requests) -> requests
+                // Reglas de acceso...
                 .anyRequest().authenticated()
-            )
-            .formLogin(login -> login
-                .loginPage("/login") // ¡Esta será nuestra ruta personalizada!
-                .defaultSuccessUrl("/", true) // Si el login es correcto, va al catálogo
+        )
+        .formLogin((form) -> form
+                .loginPage("/login")
                 .permitAll()
-            )
-            .logout(logout -> logout
-                .permitAll() // Permitimos que todos puedan cerrar sesión
-            );
-            
+        )
+        .logout((logout) -> logout
+                .logoutSuccessUrl("/") // <--- ESTO ES LO QUE TE REGRESA AL INICIO
+                .permitAll()
+        );
+        
         return http.build();
     }
 }

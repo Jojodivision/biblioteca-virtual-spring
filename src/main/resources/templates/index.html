@@ -21,6 +21,11 @@
                         <li class="nav-item">
                             <a class="nav-link text-warning fw-bold" th:href="@{/perfil}">👤 Mi Perfil</a>
                         </li>
+                        <li class="nav-item">
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent">🚪 Salir</button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
             </div>
