@@ -51,7 +51,8 @@ public class UsuarioServiceImpl implements UsuarioService, UserDetailsService {
 
     @Override
     public boolean existeCorreo(String correo) {
-        return usuarioDao.existsByCorreoElectronico(correo);
+        // ACTUALIZADO: Ya no dice "Electronico"
+        return usuarioDao.existsByCorreo(correo);
     }
 
     @Override
@@ -68,7 +69,8 @@ public class UsuarioServiceImpl implements UsuarioService, UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public Usuario buscarPorCorreo(String correo) {
-        return usuarioDao.findByCorreoElectronico(correo);
+        // ACTUALIZADO: Ya no dice "Electronico"
+        return usuarioDao.findByCorreo(correo);
     }
 
     @Override
@@ -80,7 +82,8 @@ public class UsuarioServiceImpl implements UsuarioService, UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public boolean existeCorreoParaOtroUsuario(String correo, Long identificacion) {
-        return usuarioDao.existsByCorreoElectronicoAndIdentificacionNot(correo, identificacion);
+        // ACTUALIZADO: Ya no dice "Electronico"
+        return usuarioDao.existsByCorreoAndIdentificacionNot(correo, identificacion);
     }
 
     // ====================================================================
