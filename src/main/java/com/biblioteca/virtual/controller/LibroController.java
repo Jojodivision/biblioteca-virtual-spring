@@ -16,7 +16,7 @@ public class LibroController {
     @Autowired
     private LibroService libroService;
 
-    // --- PRIMER MÉTODO: Cargar la página principal ---
+    // 
     @GetMapping("/")
     public String inicio(Model model) {
         log.info("Ejecutando el controlador Spring MVC de la Biblioteca");
