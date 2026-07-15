@@ -63,4 +63,32 @@ public class PrestamoServiceImpl implements PrestamoService {
         Usuario usuario = usuarioDao.findByUsername(username);
         return prestamoDao.findByUsuario(usuario);
     }
+    @Override
+    @Transactional
+    public void devolverLibro(Long idPrestamo, String username) throws Exception {
+        // 1. Buscamos el recibo
+        Prestamo prestamo = prestamoDao.findById(idPrestamo)
+                .orElseThrow(() -> new Exception("Préstamo no encontrado"));
+
+        // 2. Seguridad: Verificamos que el recibo le pertenezca a quien inició sesión
+        if (!prestamo.getUsuario().getUsername().equals(username)) {
+            throw new Exception("No tienes permiso para modificar este recibo.");
+        }
+
+        // 3. Verificamos que no esté devuelto ya
+        if ("DEVUELTO".equals(prestamo.getEstado())) {
+            throw new Exception("Este libro ya fue devuelto anteriormente.");
+        }
+
+        // 4. Cambiamos el estado del recibo
+        prestamo.setEstado("DEVUELTO");
+
+        // 5. Le sumamos 1 al inventario físico del libro
+        Libro libro = prestamo.getLibro();
+        libro.setCantidad(libro.getCantidad() + 1);
+
+        // 6. Guardamos los cambios
+        prestamoDao.save(prestamo);
+        libroDao.save(libro);
+    }
 }

@@ -11,4 +11,6 @@ public interface PrestamoService {
     // Obtiene el historial del estudiante
     List<Prestamo> obtenerPrestamosPorUsername(String username);
     
+    // Intenta devolver el libro y sumar el stock
+    void devolverLibro(Long idPrestamo, String username) throws Exception;
 }

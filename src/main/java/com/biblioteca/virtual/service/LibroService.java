@@ -16,4 +16,6 @@ public interface LibroService {
     
     // Método para buscar un libro específico por su ID
     public Libro getLibro(Libro libro);
+    // Método para la barra de búsqueda
+    java.util.List<Libro> buscarLibros(String termino);
 }

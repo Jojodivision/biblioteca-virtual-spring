@@ -21,18 +21,25 @@ public class LibroController {
     @Autowired 
     private PrestamoService prestamoService;
 
-    // --- PRIMER MÉTODO: Mostrar la página principal ---
+    // --- PRIMER MÉTODO: Mostrar la página principal y el buscador ---
     @GetMapping("/")
-    public String inicio(Model model) {
+    public String inicio(Model model, @org.springframework.web.bind.annotation.RequestParam(value = "palabraClave", required = false) String palabraClave) {
         log.info("Ejecutando el controlador Spring MVC de la Biblioteca");
         
-        // Obtenemos la lista de libros desde la base de datos
-        var libros = libroService.getLibros();
+        java.util.List<Libro> libros;
+        
+        // Si el usuario escribió algo en el buscador, usamos tu nuevo método
+        if (palabraClave != null && !palabraClave.isBlank()) {
+            libros = libroService.buscarLibros(palabraClave);
+        } else {
+            // Si la barra está vacía, mostramos todo el catálogo
+            libros = libroService.getLibros();
+        }
 
-        // Compartimos la lista con la vista HTML bajo el nombre "libros"
+        // Compartimos los datos con el HTML
         model.addAttribute("libros", libros);
+        model.addAttribute("palabraClave", palabraClave); // Para que el texto no se borre de la barra al buscar
 
-        // Retornamos el nombre del archivo HTML (index.html)
         return "index";
     }
 
@@ -94,5 +101,25 @@ public class LibroController {
     @GetMapping("/login")
     public String login() {
         return "login"; // Busca el archivo login.html 
+    }
+    // --- RUTA PARA DEVOLVER UN LIBRO ---
+    @PostMapping("/devolver/{id}")
+    public String devolverLibro(@PathVariable("id") Long idPrestamo, java.security.Principal principal, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        
+        try {
+            prestamoService.devolverLibro(idPrestamo, principal.getName());
+            
+            redirectAttributes.addFlashAttribute("mensaje", "¡Libro devuelto con éxito! Gracias por cuidarlo.");
+            redirectAttributes.addFlashAttribute("tipo", "success");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensaje", e.getMessage());
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+        }
+        
+        // Lo regresamos a su perfil para que vea el cambio
+        return "redirect:/perfil"; 
     }
 }

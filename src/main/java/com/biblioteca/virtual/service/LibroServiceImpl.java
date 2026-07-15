@@ -37,4 +37,10 @@ public class LibroServiceImpl implements LibroService {
     public Libro getLibro(Libro libro) {
         return libroDao.findById(libro.getIdLibro()).orElse(null);
     }
+    @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public java.util.List<Libro> buscarLibros(String termino) {
+        // Le pasamos la palabra clave a ambos campos (título y autor)
+        return libroDao.findByTituloContainingIgnoreCaseOrAutorContainingIgnoreCase(termino, termino);
+    }
 }

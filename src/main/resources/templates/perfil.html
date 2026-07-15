@@ -25,6 +25,12 @@
     </nav>
 
     <div class="container">
+        
+        <div th:if="${mensaje}" th:classappend="'alert-' + ${tipo}" class="alert alert-dismissible fade show shadow-sm" role="alert">
+            <strong th:text="${tipo == 'success' ? '¡Excelente!' : 'Atención:'}"></strong> <span th:text="${mensaje}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
         <div class="row mb-4">
             <div class="col">
                 <h2 class="text-secondary fw-bold">Mis Préstamos Activos</h2>
@@ -43,7 +49,7 @@
                                 <th>Fecha de Préstamo</th>
                                 <th>Fecha Límite</th>
                                 <th>Estado</th>
-                            </tr>
+                                <th>Acción</th> </tr>
                         </thead>
                         <tbody>
                             <tr th:each="prestamo : ${prestamos}">
@@ -51,7 +57,13 @@
                                 <td th:text="${prestamo.fechaPrestamo}">2026-07-14</td>
                                 <td class="text-danger fw-bold" th:text="${prestamo.fechaDevolucion}">2026-07-21</td>
                                 <td>
-                                    <span class="badge bg-success rounded-pill px-3" th:text="${prestamo.estado}">ACTIVO</span>
+                                    <span th:class="${prestamo.estado == 'ACTIVO' ? 'badge bg-success rounded-pill px-3' : 'badge bg-secondary rounded-pill px-3'}" th:text="${prestamo.estado}">ACTIVO</span>
+                                </td>
+                                <td>
+                                    <form th:if="${prestamo.estado == 'ACTIVO'}" th:action="@{/devolver/} + ${prestamo.idPrestamo}" method="post">
+                                        <button type="submit" class="btn btn-sm btn-outline-success">🔄 Devolver</button>
+                                    </form>
+                                    <span th:if="${prestamo.estado == 'DEVUELTO'}" class="text-muted small">✔ Finalizado</span>
                                 </td>
                             </tr>
                         </tbody>
