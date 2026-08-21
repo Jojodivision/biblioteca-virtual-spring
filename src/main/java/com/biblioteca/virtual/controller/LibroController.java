@@ -102,6 +102,41 @@ public class LibroController {
         return "perfil"; // Mostrará la nueva tarjeta de datos personales
     }
 
+    // --- NUEVA RUTA: ACTUALIZAR DATOS DEL PERFIL ---
+    @PostMapping("/perfil/actualizar")
+    public String actualizarPerfil(
+            @org.springframework.web.bind.annotation.RequestParam("nombre") String nombre,
+            @org.springframework.web.bind.annotation.RequestParam("primerApellido") String primerApellido,
+            @org.springframework.web.bind.annotation.RequestParam("segundoApellido") String segundoApellido,
+            java.security.Principal principal,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+
+        if (principal == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            // Buscamos al usuario que tiene la sesión iniciada
+            com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
+
+            // Le asignamos los nuevos valores
+            usuario.setNombre(nombre);
+            usuario.setPrimerApellido(primerApellido);
+            usuario.setSegundoApellido(segundoApellido);
+
+            // Guardamos los cambios en la BD
+            usuarioDao.save(usuario);
+
+            redirectAttributes.addFlashAttribute("mensaje", "¡Tus datos personales han sido actualizados!");
+            redirectAttributes.addFlashAttribute("tipo", "success");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensaje", "Hubo un error al actualizar el perfil.");
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+        }
+
+        return "redirect:/perfil";
+    }
+
     // --- RUTA 2: HISTORIAL DE PRÉSTAMOS ---
     @GetMapping("/prestamos")
     public String verPrestamos(org.springframework.ui.Model model, java.security.Principal principal) {
@@ -131,6 +166,7 @@ public class LibroController {
     public String login() {
         return "login"; // Busca el archivo login.html 
     }
+    
     // --- RUTA PARA DEVOLVER UN LIBRO ---
     @PostMapping("/devolver/{id}")
     public String devolverLibro(@PathVariable("id") Long idPrestamo, java.security.Principal principal, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
