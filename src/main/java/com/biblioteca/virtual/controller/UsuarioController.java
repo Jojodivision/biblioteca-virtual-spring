@@ -27,7 +27,13 @@ public class UsuarioController {
             @RequestParam(value = "identificacion", required = false) String identificacionBuscar,
             @RequestParam(value = "nombre", required = false) String nombreBuscar,
             @RequestParam(value = "correo", required = false) String correoBuscar,
-            Model model) {
+            Model model, 
+            java.security.Principal principal) { // <-- Agregamos el Principal para seguridad
+
+        // Validación de seguridad: Si no hay sesión, pa' fuera
+        if (principal == null) {
+            return "redirect:/login";
+        }
 
         boolean seRealizoBusqueda =
                 (identificacionBuscar != null && !identificacionBuscar.isBlank())
