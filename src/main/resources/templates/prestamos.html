@@ -46,12 +46,14 @@
                             <th>Fecha Límite</th>
                             <th>Estado</th>
                             <th>Acción</th>
+                            <th th:if="${esAdmin}">Estudiante</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- THYMELEAF MAGIA: Solo dibuja la fila si el estado es ACTIVO -->
                         <tr th:each="prestamo : ${prestamos}" th:if="${prestamo.estado == 'ACTIVO'}">
                             <td class="px-4 fw-bold text-primary" th:text="${prestamo.libro.titulo}">Título</td>
+                            <td th:if="${esAdmin}" class="text-secondary fw-bold" th:text="${prestamo.usuario.nombre + ' ' + prestamo.usuario.primerApellido}"></td>
                             <td th:text="${prestamo.fechaPrestamo}">Fecha</td>
                             <td class="text-danger fw-bold" th:text="${prestamo.fechaDevolucion}">Fecha</td>
                             <td><span class="badge bg-success rounded-pill px-3">ACTIVO</span></td>
@@ -78,12 +80,14 @@
                             <th>Fecha de Préstamo</th>
                             <th>Estado</th>
                             <th>Comprobante</th>
+                            <th th:if="${esAdmin}">Estudiante</th>
                         </tr>
                     </thead>
                     <tbody>
                         <!-- Solo dibuja la fila si el estado es DEVUELTO -->
                         <tr th:each="prestamo : ${prestamos}" th:if="${prestamo.estado == 'DEVUELTO'}">
                             <td class="px-4 fw-bold" th:text="${prestamo.libro.titulo}">Título</td>
+                            <td th:if="${esAdmin}" class="text-secondary fw-bold" th:text="${prestamo.usuario.nombre + ' ' + prestamo.usuario.primerApellido}"></td>
                             <td th:text="${prestamo.fechaPrestamo}">Fecha</td>
                             <td><span class="badge bg-secondary rounded-pill px-3">DEVUELTO</span></td>
                             <td class="small">✔ Finalizado</td>

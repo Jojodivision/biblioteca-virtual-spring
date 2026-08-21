@@ -61,6 +61,7 @@
                             <th>Días de Atraso</th>
                             <th>Monto a Pagar</th>
                             <th>Acción Administrativa</th>
+                            <th th:if="${esAdmin}">Acción Administrativa</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,6 +84,12 @@
                             <td class="text-danger fw-bold fs-5" th:text="${'₡' + #numbers.formatDecimal(usuario.multaPendiente, 1, 'COMMA', 2, 'POINT')}"></td>
                             <td>
                                 <!-- Botón para normalizar cuenta -->
+                                <form th:action="@{'/multas/normalizar/' + ${usuario.identificacion}}" method="post" onsubmit="return confirm('¿Confirmas que el estudiante canceló la deuda? La cuenta será desbloqueada inmediatamente.');">
+                                    <button type="submit" class="btn btn-success fw-bold">💵 Recibir Pago & Normalizar</button>
+                                </form>
+                            </td>
+                            <td th:if="${esAdmin}">
+                            <!-- Botón para normalizar cuenta -->
                                 <form th:action="@{'/multas/normalizar/' + ${usuario.identificacion}}" method="post" onsubmit="return confirm('¿Confirmas que el estudiante canceló la deuda? La cuenta será desbloqueada inmediatamente.');">
                                     <button type="submit" class="btn btn-success fw-bold">💵 Recibir Pago & Normalizar</button>
                                 </form>

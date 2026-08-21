@@ -40,10 +40,20 @@ public class PrestamoServiceImpl implements PrestamoService {
         if (usuario == null) {
             throw new Exception("Usuario no encontrado.");
         }
-        // NUEVO: Validación de Morosidad (Candado de Seguridad)
-        // Verificamos que el objeto no sea nulo y que la multa sea mayor a cero
+        // NUEVO: Doble Validación de Morosidad (Candado de Seguridad)
+        //Verificamos si ya tiene saldo pendiente cobrado por el sistema nocturno
         if (usuario.getMultaPendiente() != null && usuario.getMultaPendiente() > 0) {
             throw new Exception("Cargos por mora, por favor normalizar para poder realizar la transaccion.");
+        }
+        
+        // 2. Verificamos EN TIEMPO REAL si tiene algún libro vencido hoy
+        var historialPrestamos = this.obtenerPrestamosPorUsername(usuario.getUsername()); // Usamos tu método existente
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        
+        for (com.biblioteca.virtual.domain.Prestamo p : historialPrestamos) {
+            if ("ACTIVO".equalsIgnoreCase(p.getEstado()) && p.getFechaDevolucion() != null && p.getFechaDevolucion().isBefore(hoy)) {
+                throw new Exception("Cargos por mora, por favor normalizar para poder realizar la transaccion.");
+            }
         }
         // 4. Creamos el recibo
         Prestamo prestamo = new Prestamo();

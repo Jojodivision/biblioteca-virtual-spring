@@ -18,6 +18,10 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+    // ¡AQUÍ ESTÁ LA SOLUCIÓN! Le damos acceso al Dao en este controlador
+    @Autowired
+    private com.biblioteca.virtual.dao.UsuarioDao usuarioDao;
+
     // Patrón sencillo para validar formato de correo (HU-02 y HU-04)
     private static final String PATRON_CORREO = "^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
 
@@ -27,36 +31,28 @@ public class UsuarioController {
             @RequestParam(value = "identificacion", required = false) String identificacionBuscar,
             @RequestParam(value = "nombre", required = false) String nombreBuscar,
             @RequestParam(value = "correo", required = false) String correoBuscar,
-            Model model,
-            java.security.Principal principal) { // <-- Agregamos el Principal para seguridad
+            Model model, 
+            java.security.Principal principal) { 
 
-        // Validación de seguridad: Si no hay sesión, pa' fuera
         if (principal == null) {
             return "redirect:/login";
         }
 
-        boolean seRealizoBusqueda
-                = (identificacionBuscar != null && !identificacionBuscar.isBlank())
-                || (nombreBuscar != null && !nombreBuscar.isBlank())
-                || (correoBuscar != null && !correoBuscar.isBlank());
+        boolean seRealizoBusqueda =
+                (identificacionBuscar != null && !identificacionBuscar.isBlank())
+                        || (nombreBuscar != null && !nombreBuscar.isBlank())
+                        || (correoBuscar != null && !correoBuscar.isBlank());
 
         List<Usuario> usuarios;
 
         if (!seRealizoBusqueda) {
-
             usuarios = usuarioService.getUsuarios();
-
         } else if (identificacionBuscar != null && !identificacionBuscar.isBlank()) {
-
             if (!identificacionBuscar.matches("\\d+")) {
-
                 model.addAttribute("mensajeBusqueda", "Información inválida");
                 usuarios = usuarioService.getUsuarios();
-
             } else {
-
                 Usuario encontrado = usuarioService.buscarPorIdentificacion(Long.parseLong(identificacionBuscar));
-
                 if (encontrado == null) {
                     model.addAttribute("mensajeBusqueda", "No existe el usuario");
                     usuarios = List.of();
@@ -64,18 +60,12 @@ public class UsuarioController {
                     usuarios = List.of(encontrado);
                 }
             }
-
         } else if (correoBuscar != null && !correoBuscar.isBlank()) {
-
             if (!correoBuscar.matches(PATRON_CORREO)) {
-
                 model.addAttribute("mensajeBusqueda", "Información inválida");
                 usuarios = usuarioService.getUsuarios();
-
             } else {
-
                 Usuario encontrado = usuarioService.buscarPorCorreo(correoBuscar);
-
                 if (encontrado == null) {
                     model.addAttribute("mensajeBusqueda", "No existe el usuario");
                     usuarios = List.of();
@@ -83,11 +73,8 @@ public class UsuarioController {
                     usuarios = List.of(encontrado);
                 }
             }
-
         } else {
-
             usuarios = usuarioService.buscarPorNombre(nombreBuscar);
-
             if (usuarios.isEmpty()) {
                 model.addAttribute("mensajeBusqueda", "No existe el usuario");
             }
@@ -104,20 +91,17 @@ public class UsuarioController {
     // ---------- FORMULARIO DE REGISTRO (HU-02) ----------
     @GetMapping("/usuario/agregar")
     public String agregar(Usuario usuario, Model model) {
-
         model.addAttribute("modoEdicion", false);
-
         return "usuario_form";
     }
 
     // ---------- GUARDAR (HU-02 registrar / HU-04 actualizar) ----------
     @PostMapping("/usuario/guardar")
     public String guardar(@ModelAttribute Usuario usuario,
-            @RequestParam(value = "modoEdicion", defaultValue = "false") boolean modoEdicion,
-            Model model,
-            RedirectAttributes redirectAttributes) {
+                          @RequestParam(value = "modoEdicion", defaultValue = "false") boolean modoEdicion,
+                          Model model,
+                          RedirectAttributes redirectAttributes) {
 
-        // Validación de campos obligatorios, común a registro y actualización
         if (usuario.getNombre() == null || usuario.getNombre().isBlank()
                 || usuario.getPrimerApellido() == null || usuario.getPrimerApellido().isBlank()
                 || usuario.getSegundoApellido() == null || usuario.getSegundoApellido().isBlank()
@@ -131,33 +115,23 @@ public class UsuarioController {
         }
 
         if (!usuario.getCorreo().matches(PATRON_CORREO)) {
-
             model.addAttribute("mensaje", "Formato de correo inválido");
             model.addAttribute("modoEdicion", modoEdicion);
             return "usuario_form";
         }
 
         if (!modoEdicion) {
-
-            // ----- HU-02: Registrar usuario -----
-            // Actualizado para usar getPassword()
             if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
-
                 model.addAttribute("mensaje", "Campos obligatorios");
                 model.addAttribute("modoEdicion", false);
                 return "usuario_form";
             }
-
             if (usuarioService.existeIdentificacion(usuario.getIdentificacion())) {
-
                 model.addAttribute("mensaje", "El usuario ya existe");
                 model.addAttribute("modoEdicion", false);
                 return "usuario_form";
             }
-
-            // Actualizado para usar getCorreo()
             if (usuarioService.existeCorreo(usuario.getCorreo())) {
-
                 model.addAttribute("mensaje", "Correo electrónico ya registrado");
                 model.addAttribute("modoEdicion", false);
                 return "usuario_form";
@@ -165,110 +139,101 @@ public class UsuarioController {
 
             usuario.setActivo(true);
             usuarioService.save(usuario);
-
             redirectAttributes.addFlashAttribute("mensaje", "Usuario registrado satisfactoriamente");
             redirectAttributes.addFlashAttribute("exito", true);
-
             return "redirect:/usuarios";
 
         } else {
-
-            // ----- HU-04: Actualizar usuario -----
             Usuario existente = usuarioService.buscarPorIdentificacion(usuario.getIdentificacion());
-
             if (existente == null) {
-
                 model.addAttribute("mensaje", "No existe el usuario");
                 model.addAttribute("modoEdicion", true);
                 return "usuario_form";
             }
-
-            // Actualizado para usar getCorreo()
             if (usuarioService.existeCorreoParaOtroUsuario(usuario.getCorreo(), existente.getIdentificacion())) {
-
                 model.addAttribute("mensaje", "Correo electrónico ya registrado");
                 model.addAttribute("modoEdicion", true);
                 return "usuario_form";
             }
 
-            // La identificación no se modifica; la contraseña tampoco se toca aquí
             existente.setNombre(usuario.getNombre());
             existente.setPrimerApellido(usuario.getPrimerApellido());
             existente.setSegundoApellido(usuario.getSegundoApellido());
-            existente.setCorreo(usuario.getCorreo()); // Actualizado
+            existente.setCorreo(usuario.getCorreo()); 
             existente.setTelefono(usuario.getTelefono());
             existente.setRol(usuario.getRol());
 
             usuarioService.save(existente);
-
             redirectAttributes.addFlashAttribute("mensaje", "Usuario actualizado satisfactoriamente");
             redirectAttributes.addFlashAttribute("exito", true);
-
             return "redirect:/usuarios";
         }
     }
 
     // ---------- FORMULARIO DE EDICIÓN (HU-04) ----------
     @GetMapping("/usuario/modificar/{identificacion}")
-    public String modificar(@PathVariable Long identificacion,
-            Model model) {
-
+    public String modificar(@PathVariable Long identificacion, Model model) {
         Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
-
         model.addAttribute("usuario", usuario);
         model.addAttribute("modoEdicion", true);
-
         return "usuario_form";
     }
 
     // ---------- DESACTIVAR (baja lógica, no elimina el registro) ----------
     @PostMapping("/usuario/desactivar/{identificacion}")
-    public String desactivar(@PathVariable Long identificacion,
-            RedirectAttributes redirectAttributes) {
-
+    public String desactivar(@PathVariable Long identificacion, RedirectAttributes redirectAttributes) {
         Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
-
         if (usuario != null) {
-
             usuario.setActivo(false);
             usuarioService.save(usuario);
-
             redirectAttributes.addFlashAttribute("mensaje", "Usuario desactivado satisfactoriamente");
             redirectAttributes.addFlashAttribute("exito", true);
         }
-
         return "redirect:/usuarios";
     }
-// ---------- MÓDULO DE MULTAS Y PENALIZACIONES ----------
 
+    // ---------- MÓDULO DE MULTAS Y PENALIZACIONES ----------
     @GetMapping("/multas")
     public String gestionarMultas(Model model, java.security.Principal principal) {
         if (principal == null) {
             return "redirect:/login";
         }
+        
+        Usuario usuarioActual = usuarioDao.findByUsername(principal.getName());
+        boolean esAdmin = "ROLE_ADMIN".equals(usuarioActual.getRol());
+        List<Usuario> morosos;
 
-        // Buscamos a todos los usuarios y filtramos únicamente a los que deben más de 0 colones
-        List<Usuario> morosos = usuarioService.getUsuarios().stream()
-                .filter(u -> u.getMultaPendiente() != null && u.getMultaPendiente() > 0)
-                .collect(java.util.stream.Collectors.toList());
+        if (esAdmin) {
+            // Admin ve a todos los deudores
+            morosos = usuarioService.getUsuarios().stream()
+                    .filter(u -> u.getMultaPendiente() != null && u.getMultaPendiente() > 0)
+                    .collect(java.util.stream.Collectors.toList());
+        } else {
+            // Estudiante solo se ve a sí mismo si debe dinero
+            morosos = new java.util.ArrayList<>();
+            if (usuarioActual.getMultaPendiente() != null && usuarioActual.getMultaPendiente() > 0) {
+                morosos.add(usuarioActual);
+            }
+        }
 
         model.addAttribute("morosos", morosos);
+        model.addAttribute("esAdmin", esAdmin); // Para ocultar el botón de pagar a los estudiantes
         return "multas";
     }
 
     @PostMapping("/multas/normalizar/{identificacion}")
     public String normalizarMulta(@PathVariable Long identificacion, RedirectAttributes redirectAttributes) {
         Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
-
+        
         if (usuario != null) {
-            // El estudiante pagó, enceramos la deuda y le devolvemos los privilegios
+            // El estudiante pagó, enceramos la deuda
             usuario.setMultaPendiente(0.0);
             usuarioService.save(usuario);
-
+            
             redirectAttributes.addFlashAttribute("mensaje", "La cuenta de " + usuario.getNombre() + " ha sido normalizada (Saldo: ₡0). Ya puede realizar préstamos nuevamente.");
             redirectAttributes.addFlashAttribute("tipo", "success");
         }
-
+        
         return "redirect:/multas";
     }
 }

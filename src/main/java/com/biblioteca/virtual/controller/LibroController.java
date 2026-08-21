@@ -1,6 +1,6 @@
 package com.biblioteca.virtual.controller;
 
-import com.biblioteca.virtual.domain.Libro; 
+import com.biblioteca.virtual.domain.Libro;
 import com.biblioteca.virtual.service.LibroService;
 import com.biblioteca.virtual.service.PrestamoService;
 import lombok.extern.slf4j.Slf4j;
@@ -17,10 +17,10 @@ public class LibroController {
 
     @Autowired
     private LibroService libroService;
-    
-    @Autowired 
+
+    @Autowired
     private PrestamoService prestamoService;
-    
+
     @Autowired
     private com.biblioteca.virtual.dao.UsuarioDao usuarioDao;
 
@@ -28,9 +28,9 @@ public class LibroController {
     @GetMapping("/")
     public String inicio(Model model, @org.springframework.web.bind.annotation.RequestParam(value = "palabraClave", required = false) String palabraClave) {
         log.info("Ejecutando el controlador Spring MVC de la Biblioteca");
-        
+
         java.util.List<Libro> libros;
-        
+
         // Si el usuario escribió algo en el buscador, usamos tu nuevo método
         if (palabraClave != null && !palabraClave.isBlank()) {
             libros = libroService.buscarLibros(palabraClave);
@@ -58,11 +58,11 @@ public class LibroController {
     public String guardar(Libro libro) {
         // Le pasamos el libro lleno con los datos del formulario al servicio
         libroService.save(libro);
-        
+
         // Redirigimos a la página principal para ver la tabla actualizada
         return "redirect:/";
     }
-    
+
     // --- RUTA PARA RESERVAR UN LIBRO ---
     @PostMapping("/reservar/{id}")
     public String reservarLibro(@PathVariable("id") Long idLibro, java.security.Principal principal, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
@@ -70,11 +70,11 @@ public class LibroController {
         if (principal == null) {
             return "redirect:/login";
         }
-        
+
         try {
             // Mandamos a llamar tu lógica matemática
             prestamoService.realizarPrestamo(idLibro, principal.getName());
-            
+
             redirectAttributes.addFlashAttribute("mensaje", "¡Libro reservado con éxito! Tienes 7 días para devolverlo.");
             redirectAttributes.addFlashAttribute("tipo", "success");
         } catch (Exception e) {
@@ -92,13 +92,13 @@ public class LibroController {
         if (principal == null) {
             return "redirect:/login";
         }
-        
+
         // Buscamos toda la información personal del estudiante en la base de datos
         com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
-        
+
         // Enviamos el objeto 'usuario' completo a la vista
         model.addAttribute("usuario", usuario);
-        
+
         return "perfil"; // Mostrará la nueva tarjeta de datos personales
     }
 
@@ -137,18 +137,29 @@ public class LibroController {
         return "redirect:/perfil";
     }
 
-    // --- RUTA 2: HISTORIAL DE PRÉSTAMOS ---
+    // --- RUTA 2: HISTORIAL DE PRÉSTAMOS (INTELIGENTE POR ROL) ---
     @GetMapping("/prestamos")
     public String verPrestamos(org.springframework.ui.Model model, java.security.Principal principal) {
         if (principal == null) {
             return "redirect:/login";
         }
-        
-        // Mudamos la lógica de los recibos para acá
-        var prestamos = prestamoService.obtenerPrestamosPorUsername(principal.getName());
+
+        com.biblioteca.virtual.domain.Usuario usuarioActual = usuarioDao.findByUsername(principal.getName());
+        java.util.List<com.biblioteca.virtual.domain.Prestamo> prestamos;
+        boolean esAdmin = "ROLE_ADMIN".equals(usuarioActual.getRol());
+
+        if (esAdmin) {
+            // El administrador ve TODOS los préstamos de la biblioteca
+            prestamos = prestamoService.getPrestamos();
+        } else {
+            // El estudiante solo ve sus propios recibos
+            prestamos = prestamoService.obtenerPrestamosPorUsername(principal.getName());
+        }
+
         model.addAttribute("prestamos", prestamos);
-        
-        return "prestamos"; // Buscará un nuevo archivo prestamos.html
+        model.addAttribute("esAdmin", esAdmin); // Le pasamos a la vista HTML si es admin o no
+
+        return "prestamos";
     }
 
     // --- RUTA 3: SISTEMA DE ENCARGOS ---
@@ -157,26 +168,26 @@ public class LibroController {
         if (principal == null) {
             return "redirect:/login";
         }
-        
+
         // Por ahora solo creamos el puente. Más adelante le agregaremos la lógica matemática.
         return "encargos"; // Buscará un nuevo archivo encargos.html
     }
-    
+
     @GetMapping("/login")
     public String login() {
         return "login"; // Busca el archivo login.html 
     }
-    
+
     // --- RUTA PARA DEVOLVER UN LIBRO ---
     @PostMapping("/devolver/{id}")
     public String devolverLibro(@PathVariable("id") Long idPrestamo, java.security.Principal principal, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         if (principal == null) {
             return "redirect:/login";
         }
-        
+
         try {
             prestamoService.devolverLibro(idPrestamo, principal.getName());
-            
+
             redirectAttributes.addFlashAttribute("mensaje", "¡Libro devuelto con éxito! Gracias por cuidarlo.");
             redirectAttributes.addFlashAttribute("tipo", "success");
         } catch (Exception e) {
@@ -184,6 +195,6 @@ public class LibroController {
             redirectAttributes.addFlashAttribute("tipo", "danger");
         }
 
-        return "redirect:/prestamos"; 
+        return "redirect:/prestamos";
     }
 }
