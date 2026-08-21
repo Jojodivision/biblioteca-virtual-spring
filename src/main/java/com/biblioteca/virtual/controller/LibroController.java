@@ -20,6 +20,9 @@ public class LibroController {
     
     @Autowired 
     private PrestamoService prestamoService;
+    
+    @Autowired
+    private com.biblioteca.virtual.dao.UsuarioDao usuarioDao;
 
     // --- PRIMER MÉTODO: Mostrar la página principal y el buscador ---
     @GetMapping("/")
@@ -83,19 +86,45 @@ public class LibroController {
     }
 
     // --- RUTA PARA VER EL PERFIL DEL ESTUDIANTE ---
+    // --- RUTA 1: PERFIL DEL ESTUDIANTE (DATOS PERSONALES) ---
     @GetMapping("/perfil")
     public String verPerfil(org.springframework.ui.Model model, java.security.Principal principal) {
         if (principal == null) {
             return "redirect:/login";
         }
         
-        // Buscamos solo los recibos que le pertenecen a este estudiante
+        // Buscamos toda la información personal del estudiante en la base de datos
+        com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
+        
+        // Enviamos el objeto 'usuario' completo a la vista
+        model.addAttribute("usuario", usuario);
+        
+        return "perfil"; // Mostrará la nueva tarjeta de datos personales
+    }
+
+    // --- RUTA 2: HISTORIAL DE PRÉSTAMOS ---
+    @GetMapping("/prestamos")
+    public String verPrestamos(org.springframework.ui.Model model, java.security.Principal principal) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        
+        // Mudamos la lógica de los recibos para acá
         var prestamos = prestamoService.obtenerPrestamosPorUsername(principal.getName());
-        
         model.addAttribute("prestamos", prestamos);
-        model.addAttribute("username", principal.getName());
         
-        return "perfil"; // Esto buscará el archivo perfil.html
+        return "prestamos"; // Buscará un nuevo archivo prestamos.html
+    }
+
+    // --- RUTA 3: SISTEMA DE ENCARGOS ---
+    @GetMapping("/encargos")
+    public String verEncargos(org.springframework.ui.Model model, java.security.Principal principal) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        
+        // Por ahora solo creamos el puente. Más adelante le agregaremos la lógica matemática.
+        return "encargos"; // Buscará un nuevo archivo encargos.html
     }
     
     @GetMapping("/login")
@@ -118,8 +147,7 @@ public class LibroController {
             redirectAttributes.addFlashAttribute("mensaje", e.getMessage());
             redirectAttributes.addFlashAttribute("tipo", "danger");
         }
-        
-        // Lo regresamos a su perfil para que vea el cambio
-        return "redirect:/perfil"; 
+
+        return "redirect:/prestamos"; 
     }
 }

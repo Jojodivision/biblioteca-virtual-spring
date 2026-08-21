@@ -8,76 +8,49 @@
 </head>
 <body class="bg-light">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
+    <!-- Navbar simplificado para pantallas secundarias -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-5 shadow-sm">
         <div class="container">
             <a class="navbar-brand fw-bold" href="/">📚 Biblioteca Virtual</a>
             <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item me-3">
-                        <a class="nav-link text-white" href="/">Volver al Catálogo</a>
-                    </li>
-                    <li class="nav-item">
-                        <span class="nav-link text-white-50">👤 Perfil de: <strong class="text-white" th:text="${username}">Usuario</strong></span>
-                    </li>
-                    <li class="nav-item">
-                            <form th:action="@{/logout}" method="post">
-                                <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent">🚪 Salir</button>
-                            </form>
-                    </li>
+                    <li class="nav-item"><a class="nav-link text-white" href="/">Volver al Catálogo</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
     <div class="container">
-        
-        <div th:if="${mensaje}" th:classappend="'alert-' + ${tipo}" class="alert alert-dismissible fade show shadow-sm" role="alert">
-            <strong th:text="${tipo == 'success' ? '¡Excelente!' : 'Atención:'}"></strong> <span th:text="${mensaje}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col">
-                <h2 class="text-secondary fw-bold">Mis Préstamos Activos</h2>
-                <p class="text-muted">Aquí puedes visualizar el historial de libros que has reservado en el sistema.</p>
-            </div>
-        </div>
-
-        <div class="card shadow-sm border-0 rounded-3">
-            <div class="card-body p-0">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
                 
-                <div th:if="${prestamos != null and !prestamos.empty}" class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="px-4 py-3">Libro Reservado</th>
-                                <th>Fecha de Préstamo</th>
-                                <th>Fecha Límite</th>
-                                <th>Estado</th>
-                                <th>Acción</th> </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="prestamo : ${prestamos}">
-                                <td class="px-4 fw-bold text-primary" th:text="${prestamo.libro.titulo}">Título del Libro</td>
-                                <td th:text="${prestamo.fechaPrestamo}">2026-07-14</td>
-                                <td class="text-danger fw-bold" th:text="${prestamo.fechaDevolucion}">2026-07-21</td>
-                                <td>
-                                    <span th:class="${prestamo.estado == 'ACTIVO' ? 'badge bg-success rounded-pill px-3' : 'badge bg-secondary rounded-pill px-3'}" th:text="${prestamo.estado}">ACTIVO</span>
-                                </td>
-                                <td>
-                                    <form th:if="${prestamo.estado == 'ACTIVO'}" th:action="@{/devolver/} + ${prestamo.idPrestamo}" method="post">
-                                        <button type="submit" class="btn btn-sm btn-outline-success">🔄 Devolver</button>
-                                    </form>
-                                    <span th:if="${prestamo.estado == 'DEVUELTO'}" class="text-muted small">✔ Finalizado</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <h2 class="text-secondary fw-bold mb-4 text-center">Información de la Cuenta</h2>
                 
-                <div th:if="${prestamos == null or prestamos.empty}" class="p-5 text-center">
-                    <h5 class="text-muted mb-3">No tienes libros reservados en este momento.</h5>
-                    <a href="/" class="btn btn-outline-primary">Ir a buscar un libro</a>
+                <div class="card shadow-sm border-0 rounded-3">
+                    <div class="card-header bg-dark text-white text-center py-4">
+                        <h4 class="mb-0" th:text="${usuario.nombre + ' ' + usuario.apellidos}">Nombre del Usuario</h4>
+                    </div>
+                    <div class="card-body p-5">
+                        <div class="row mb-3 pb-3 border-bottom">
+                            <div class="col-sm-4 fw-bold text-secondary">Nombre de Usuario:</div>
+                            <div class="col-sm-8 text-primary fw-bold" th:text="${usuario.username}">usuario123</div>
+                        </div>
+                        <div class="row mb-3 pb-3 border-bottom">
+                            <div class="col-sm-4 fw-bold text-secondary">Correo Electrónico:</div>
+                            <div class="col-sm-8" th:text="${usuario.correo}">correo@ejemplo.com</div>
+                        </div>
+                        <div class="row mb-3 pb-3 border-bottom">
+                            <div class="col-sm-4 fw-bold text-secondary">Número de Teléfono:</div>
+                            <div class="col-sm-8" th:text="${usuario.telefono}">8888-8888</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4 fw-bold text-secondary">Rol de Acceso:</div>
+                            <div class="col-sm-8">
+                                <span th:class="${usuario.rol == 'ROLE_ADMIN' ? 'badge bg-danger' : 'badge bg-success'}" 
+                                      th:text="${usuario.rol == 'ROLE_ADMIN' ? 'Administrador' : 'Estudiante'}">Rol</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
             </div>
