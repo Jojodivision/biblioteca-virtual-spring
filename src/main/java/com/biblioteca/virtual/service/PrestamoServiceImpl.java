@@ -107,7 +107,8 @@ public class PrestamoServiceImpl implements PrestamoService {
     }
 
     @Override
-    public List<Prestamo> getPrestamos() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public java.util.List<com.biblioteca.virtual.domain.Prestamo> getPrestamos() {
+        // Le pedimos al DAO que busque todos los préstamos reales en la base de datos
+        return (java.util.List<com.biblioteca.virtual.domain.Prestamo>) prestamoDao.findAll();
     }
 }
