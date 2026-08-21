@@ -27,7 +27,7 @@ public class UsuarioController {
             @RequestParam(value = "identificacion", required = false) String identificacionBuscar,
             @RequestParam(value = "nombre", required = false) String nombreBuscar,
             @RequestParam(value = "correo", required = false) String correoBuscar,
-            Model model, 
+            Model model,
             java.security.Principal principal) { // <-- Agregamos el Principal para seguridad
 
         // Validación de seguridad: Si no hay sesión, pa' fuera
@@ -35,10 +35,10 @@ public class UsuarioController {
             return "redirect:/login";
         }
 
-        boolean seRealizoBusqueda =
-                (identificacionBuscar != null && !identificacionBuscar.isBlank())
-                        || (nombreBuscar != null && !nombreBuscar.isBlank())
-                        || (correoBuscar != null && !correoBuscar.isBlank());
+        boolean seRealizoBusqueda
+                = (identificacionBuscar != null && !identificacionBuscar.isBlank())
+                || (nombreBuscar != null && !nombreBuscar.isBlank())
+                || (correoBuscar != null && !correoBuscar.isBlank());
 
         List<Usuario> usuarios;
 
@@ -113,9 +113,9 @@ public class UsuarioController {
     // ---------- GUARDAR (HU-02 registrar / HU-04 actualizar) ----------
     @PostMapping("/usuario/guardar")
     public String guardar(@ModelAttribute Usuario usuario,
-                          @RequestParam(value = "modoEdicion", defaultValue = "false") boolean modoEdicion,
-                          Model model,
-                          RedirectAttributes redirectAttributes) {
+            @RequestParam(value = "modoEdicion", defaultValue = "false") boolean modoEdicion,
+            Model model,
+            RedirectAttributes redirectAttributes) {
 
         // Validación de campos obligatorios, común a registro y actualización
         if (usuario.getNombre() == null || usuario.getNombre().isBlank()
@@ -211,7 +211,7 @@ public class UsuarioController {
     // ---------- FORMULARIO DE EDICIÓN (HU-04) ----------
     @GetMapping("/usuario/modificar/{identificacion}")
     public String modificar(@PathVariable Long identificacion,
-                            Model model) {
+            Model model) {
 
         Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
 
@@ -224,7 +224,7 @@ public class UsuarioController {
     // ---------- DESACTIVAR (baja lógica, no elimina el registro) ----------
     @PostMapping("/usuario/desactivar/{identificacion}")
     public String desactivar(@PathVariable Long identificacion,
-                             RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes) {
 
         Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
 
@@ -239,5 +239,36 @@ public class UsuarioController {
 
         return "redirect:/usuarios";
     }
+// ---------- MÓDULO DE MULTAS Y PENALIZACIONES ----------
 
+    @GetMapping("/multas")
+    public String gestionarMultas(Model model, java.security.Principal principal) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+
+        // Buscamos a todos los usuarios y filtramos únicamente a los que deben más de 0 colones
+        List<Usuario> morosos = usuarioService.getUsuarios().stream()
+                .filter(u -> u.getMultaPendiente() != null && u.getMultaPendiente() > 0)
+                .collect(java.util.stream.Collectors.toList());
+
+        model.addAttribute("morosos", morosos);
+        return "multas";
+    }
+
+    @PostMapping("/multas/normalizar/{identificacion}")
+    public String normalizarMulta(@PathVariable Long identificacion, RedirectAttributes redirectAttributes) {
+        Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
+
+        if (usuario != null) {
+            // El estudiante pagó, enceramos la deuda y le devolvemos los privilegios
+            usuario.setMultaPendiente(0.0);
+            usuarioService.save(usuario);
+
+            redirectAttributes.addFlashAttribute("mensaje", "La cuenta de " + usuario.getNombre() + " ha sido normalizada (Saldo: ₡0). Ya puede realizar préstamos nuevamente.");
+            redirectAttributes.addFlashAttribute("tipo", "success");
+        }
+
+        return "redirect:/multas";
+    }
 }

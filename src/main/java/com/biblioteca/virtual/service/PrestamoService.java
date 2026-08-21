@@ -13,4 +13,6 @@ public interface PrestamoService {
     
     // Intenta devolver el libro y sumar el stock
     void devolverLibro(Long idPrestamo, String username) throws Exception;
+
+    public List<Prestamo> getPrestamos();
 }

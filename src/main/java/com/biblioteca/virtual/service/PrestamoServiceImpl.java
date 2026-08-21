@@ -40,7 +40,11 @@ public class PrestamoServiceImpl implements PrestamoService {
         if (usuario == null) {
             throw new Exception("Usuario no encontrado.");
         }
-
+        // NUEVO: Validación de Morosidad (Candado de Seguridad)
+        // Verificamos que el objeto no sea nulo y que la multa sea mayor a cero
+        if (usuario.getMultaPendiente() != null && usuario.getMultaPendiente() > 0) {
+            throw new Exception("Cargos por mora, por favor normalizar para poder realizar la transaccion.");
+        }
         // 4. Creamos el recibo
         Prestamo prestamo = new Prestamo();
         prestamo.setLibro(libro);
@@ -90,5 +94,10 @@ public class PrestamoServiceImpl implements PrestamoService {
         // 6. Guardamos los cambios
         prestamoDao.save(prestamo);
         libroDao.save(libro);
+    }
+
+    @Override
+    public List<Prestamo> getPrestamos() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }

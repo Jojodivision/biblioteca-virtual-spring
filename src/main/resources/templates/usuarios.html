@@ -29,6 +29,9 @@
                     <li class="nav-item">
                         <a class="nav-link text-warning fw-bold" th:href="@{/perfil}">👤 Mi Perfil</a>
                     </li>
+                    <li class="nav-item me-3" sec:authorize="hasAuthority('ROLE_ADMIN')">
+                            <a class="nav-link text-danger fw-bold" th:href="@{/multas}">💰 Mis Multas</a>
+                    </li>
                     
                     <li class="nav-item ms-3">
                         <form th:action="@{/logout}" method="post" class="m-0">

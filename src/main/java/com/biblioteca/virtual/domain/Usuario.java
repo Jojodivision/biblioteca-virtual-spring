@@ -44,6 +44,9 @@ public class Usuario implements Serializable {
     private String telefono;
 
     private boolean activo = true;
+    
+    // Atributo para el control de morosidad (en colones)
+    private Double multaPendiente = 0.0;
 
 
 
