@@ -38,31 +38,37 @@
             <h4 class="text-primary fw-bold mb-3">📖 Préstamos Activos</h4>
             <div class="card shadow-sm border-0 rounded-3 mb-5">
                 <div class="card-body p-0 table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 text-center">
                         <thead class="table-light">
                             <tr>
-                                <th class="px-4 py-3">Libro Reservado</th>
+                                <th>Libro Reservado</th>
+                                <th th:if="${esAdmin}">Estudiante</th>
                                 <th>Fecha de Préstamo</th>
                                 <th>Fecha Límite</th>
                                 <th>Estado</th>
                                 <th>Acción</th>
-                                <th th:if="${esAdmin}">Estudiante</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- THYMELEAF MAGIA: Solo dibuja la fila si el estado es ACTIVO -->
-                            <tr th:each="prestamo : ${prestamos}" th:if="${prestamo.estado == 'ACTIVO'}">
-                                <td class="px-4 fw-bold text-primary" th:text="${prestamo.libro.titulo}">Título</td>
+                            <!-- Filtramos para mostrar solo los activos y los que están en revisión -->
+                            <tr th:each="prestamo : ${prestamos}" th:if="${prestamo.estado == 'ACTIVO' or prestamo.estado == 'EN REVISION'}">
+                                <td class="fw-bold text-primary" th:text="${prestamo.libro.titulo}"></td>
+
                                 <td th:if="${esAdmin}" class="text-secondary fw-bold" th:text="${prestamo.usuario.nombre + ' ' + prestamo.usuario.primerApellido}"></td>
-                                <td th:text="${prestamo.fechaPrestamo}">Fecha</td>
-                                <td class="text-danger fw-bold" th:text="${prestamo.fechaDevolucion}">Fecha</td>
-                                <td><span class="badge bg-success rounded-pill px-3">ACTIVO</span></td>
+
+                                <td th:text="${prestamo.fechaPrestamo}"></td>
+                                <td class="text-danger fw-bold" th:text="${prestamo.fechaDevolucion}"></td>
+
+                                <td>
+                                    <span th:if="${prestamo.estado == 'ACTIVO'}" class="badge bg-success rounded-pill px-3">ACTIVO</span>
+                                    <span th:if="${prestamo.estado == 'EN REVISION'}" class="badge bg-warning text-dark rounded-pill px-3">⏳ EN REVISIÓN</span>
+                                </td>
+
                                 <td>
                                     <!-- Botón de devolución para el Estudiante -->
                                     <form th:if="${!esAdmin and prestamo.estado == 'ACTIVO'}" th:action="@{'/devolver/' + ${prestamo.idPrestamo}}" method="post">
                                         <button type="submit" class="btn btn-outline-primary btn-sm fw-bold">🔄 Devolver</button>
                                     </form>
-                                    <span th:if="${!esAdmin and prestamo.estado == 'EN REVISION'}" class="badge bg-warning text-dark px-3 py-2">⏳ En Revisión</span>
 
                                     <!-- Consola de evaluación para el Administrador -->
                                     <div th:if="${esAdmin and prestamo.estado == 'EN REVISION'}" class="d-flex gap-2 justify-content-center">
