@@ -9,43 +9,8 @@
     </head>
     <body class="bg-light">
 
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-            <div class="container">
-                <a class="navbar-brand" href="/">📚 Biblioteca Virtual</a>
-                <div class="collapse navbar-collapse">
-                    <ul class="navbar-nav ms-auto">
-                        <!-- NUEVO: Botón de Préstamos -->
-                        <li class="nav-item me-3">
-                            <a class="nav-link text-white fw-bold" th:href="@{/prestamos}">🔖 Préstamos</a>
-                        </li>
-
-                        <!-- NUEVO: Botón de Encargos -->
-                        <li class="nav-item me-3">
-                            <a class="nav-link text-white fw-bold" th:href="@{/encargos}">📦 Encargos</a>
-                        </li>
-
-                        <!-- SOLO ADMIN: Gestión de Usuarios -->
-                        <li class="nav-item me-3" sec:authorize="hasAuthority('ROLE_ADMIN')">
-                            <a class="nav-link text-white fw-bold" th:href="@{/usuarios}">⚙️ Gestión de Usuarios</a>
-                        </li>
-                        <li class="nav-item me-3" sec:authorize="hasAuthority('ROLE_ADMIN')">
-                            <a class="nav-link text-danger fw-bold" th:href="@{/multas}">💰 Mis Multas</a>
-                        </li>
-                        <!-- Perfil -->
-                        <li class="nav-item">
-                            <a class="nav-link text-warning fw-bold" th:href="@{/perfil}">👤 Mi Perfil</a>
-                        </li>
-
-                        <!-- Cerrar Sesión -->
-                        <li class="nav-item ms-3">
-                            <form th:action="@{/logout}" method="post" class="m-0">
-                                <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent">🚪 Salir</button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+        <!-- Barra de navegacion enlazada con fragmentos-->
+        <div th:replace="~{fragmentos :: navbar}"></div>
 
         <div class="container">
             <div th:if="${mensaje}" th:classappend="'alert-' + ${tipo}" class="alert alert-dismissible fade show shadow-sm" role="alert">
