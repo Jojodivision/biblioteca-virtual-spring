@@ -20,12 +20,11 @@ public class Usuario implements Serializable {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(name = "contrasena")
     private String password;
 
     private String rol;
 
-    // --- EL PERFIL DE TU COMPAÑERO ---
     @Column(unique = true)
     private Long identificacion;
 
