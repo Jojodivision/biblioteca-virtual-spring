@@ -266,20 +266,30 @@ public class UsuarioController {
     }
 
     @PostMapping("/multas/normalizar/{identificacion}")
-    public String normalizarMulta(@PathVariable Long identificacion, RedirectAttributes redirectAttributes) {
-        Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
+    public String normalizarMulta(@PathVariable Long identificacion, RedirectAttributes redirectAttributes, java.security.Principal principal) {
         
-        if (usuario != null) {
-            // El estudiante pagó, enceramos ambas deudas (mora y daños)
-            usuario.setMultaPendiente(0.0);
-            usuario.setMultaDanos(0.0); 
-            usuarioService.save(usuario);
-            
-            redirectAttributes.addFlashAttribute("mensaje", "La cuenta de " + usuario.getNombre() + " ha sido normalizada (Saldo: ₡0). Ya puede realizar préstamos nuevamente.");
-            redirectAttributes.addFlashAttribute("tipo", "success");
+        // 1. Verificamos quién está intentando ejecutar esta acción
+        Usuario usuarioLogueado = usuarioDao.findByUsername(principal.getName());
+        
+        // 2. SALVAVIDAS: Si NO es administrador, lo bloqueamos inmediatamente
+        if (usuarioLogueado == null || !"ROLE_ADMIN".equals(usuarioLogueado.getRol())) {
+            redirectAttributes.addFlashAttribute("mensaje", "Acción denegada: Solo el personal de la biblioteca puede registrar pagos y eliminar multas.");
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+            return "redirect:/multas";
         }
+
+        // 3. Si es un Admin, procedemos a borrar la deuda
+        Usuario usuarioMoroso = usuarioService.buscarPorIdentificacion(identificacion);
         
-        return "redirect:/multas";
+        if (usuarioMoroso != null) {
+            usuarioMoroso.setMultaPendiente(0.0);
+            usuarioMoroso.setMultaDanos(0.0); 
+            usuarioService.save(usuarioMoroso);
+            
+            redirectAttributes.addFlashAttribute("mensaje", "La cuenta de " + usuarioMoroso.getNombre() + " ha sido normalizada (Saldo: ₡0). Ya puede realizar préstamos nuevamente.");
+            redirectAttributes.addFlashAttribute("tipo", "success");
+             
+        }  return "redirect:/multas";
     }
     // ---------- ELIMINACIÓN FÍSICA (Hard Delete) ----------
     @PostMapping("/usuario/eliminar/{identificacion}")
