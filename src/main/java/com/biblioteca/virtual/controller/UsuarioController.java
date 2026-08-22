@@ -186,7 +186,8 @@ public class UsuarioController {
             existente.setCorreo(usuario.getCorreo()); 
             existente.setTelefono(usuario.getTelefono());
             existente.setRol(usuario.getRol());
-
+            existente.setUsername(usuario.getUsername());
+            
             // Si es edición, no tocamos la contraseña aquí (se hace en otro módulo) ni mandamos correo
             usuarioService.save(existente);
             
@@ -198,8 +199,25 @@ public class UsuarioController {
 
     // ---------- FORMULARIO DE EDICIÓN (HU-04) ----------
     @GetMapping("/usuario/modificar/{identificacion}")
-    public String modificar(@PathVariable Long identificacion, Model model) {
+    public String modificar(@PathVariable Long identificacion, Model model, RedirectAttributes redirectAttributes) {
+        
+        // Bloqueamos ANTES de ir a la base de datos si la cédula es 0
+        if (identificacion == null || identificacion.equals(0L)) {
+            redirectAttributes.addFlashAttribute("mensaje", "Acción denegada: No se puede editar un usuario de sistema (Identificación 0).");
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+            return "redirect:/usuarios";
+        }
+
+        // 2. Ahora sí es seguro buscar en la base de datos
         Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
+        
+        // 3. Bloqueamos si no existe o si es el Administrador
+        if (usuario == null || "ROLE_ADMIN".equals(usuario.getRol())) {
+            redirectAttributes.addFlashAttribute("mensaje", "Acción denegada: No se puede modificar la cuenta del administrador principal.");
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+            return "redirect:/usuarios";
+        }
+        
         model.addAttribute("usuario", usuario);
         model.addAttribute("modoEdicion", true);
         return "usuario_form";
