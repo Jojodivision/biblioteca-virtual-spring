@@ -24,4 +24,6 @@ public interface UsuarioService {
     List<Usuario> buscarPorNombre(String nombre);
     
     boolean existeCorreoParaOtroUsuario(String correo, Long identificacion);
+    
+    void eliminarUsuario(Long identificacion);
 }

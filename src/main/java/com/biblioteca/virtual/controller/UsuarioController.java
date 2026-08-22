@@ -263,4 +263,18 @@ public class UsuarioController {
         
         return "redirect:/multas";
     }
+    // ---------- ELIMINACIÓN FÍSICA (Hard Delete) ----------
+    @PostMapping("/usuario/eliminar/{identificacion}")
+    public String eliminar(@PathVariable Long identificacion, RedirectAttributes redirectAttributes) {
+        try {
+            usuarioService.eliminarUsuario(identificacion);
+            redirectAttributes.addFlashAttribute("mensaje", "Usuario eliminado definitivamente de la base de datos.");
+            redirectAttributes.addFlashAttribute("tipo", "success");
+        } catch (Exception e) {
+            // Si salta un error, es porque MySQL protegió la integridad referencial
+            redirectAttributes.addFlashAttribute("mensaje", "No se puede borrar este usuario porque tiene historial de préstamos o multas. Te recomendamos usar la opción de 'Desactivar'.");
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+        }
+        return "redirect:/usuarios";
+    }
 }

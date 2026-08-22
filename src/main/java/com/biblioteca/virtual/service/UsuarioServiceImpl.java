@@ -108,4 +108,12 @@ public class UsuarioServiceImpl implements UsuarioService, UserDetailsService {
         // 4. Retornamos el usuario en el formato de Spring Security
         return new User(usuario.getUsername(), usuario.getPassword(), roles);
     }
+    @Override
+    @Transactional
+    public void eliminarUsuario(Long identificacion) {
+        Usuario usuario = buscarPorIdentificacion(identificacion);
+        if (usuario != null) {
+            usuarioDao.delete(usuario);
+        }
+    }
 }

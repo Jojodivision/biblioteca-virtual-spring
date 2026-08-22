@@ -19,7 +19,7 @@
                 </div>
                 <div class="card-body p-4">
 
-                    <div th:if="${mensaje}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <div th:if="${mensaje}" th:classappend="${tipo == 'danger' ? 'alert-danger' : 'alert-success'}" class="alert alert-dismissible fade show fw-bold" role="alert">
                         <span th:text="${mensaje}"></span>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -57,7 +57,7 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle border">
+                        <table class="table table-hover align-middle border text-center">
                             <thead class="table-primary">
                                 <tr>
                                     <th>Identificación</th>
@@ -82,11 +82,22 @@
                                               th:text="${usuario.activo ? 'Activo' : 'Inactivo'}"></span>
                                     </td>
                                     <td>
-                                        <div class="d-flex gap-2">
+                                        <!-- AQUÍ ESTÁN LOS 3 BOTONES ALINEADOS -->
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            
+                                            <!-- Botón Editar -->
                                             <a class="btn btn-warning btn-sm fw-bold text-dark" th:href="@{'/usuario/modificar/' + ${usuario.identificacion}}">✏️ Editar</a>
+                                            
+                                            <!-- Botón Desactivar (Soft Delete) -->
                                             <form th:if="${usuario.activo}" th:action="@{'/usuario/desactivar/' + ${usuario.identificacion}}" method="post" onsubmit="return confirm('¿Desea desactivar este usuario?');">
-                                                <button type="submit" class="btn btn-danger btn-sm fw-bold">🚫 Desactivar</button>
+                                                <button type="submit" class="btn btn-secondary btn-sm fw-bold" title="Baja Lógica">🚫 Desactivar</button>
                                             </form>
+
+                                            <!-- NUEVO: Botón Eliminar (Hard Delete) -->
+                                            <form th:action="@{'/usuario/eliminar/' + ${usuario.identificacion}}" method="post" onsubmit="return confirm('⚠️ ¿ESTÁS SEGURO? Esta acción borrará al usuario permanentemente y no se puede deshacer.');">
+                                                <button type="submit" class="btn btn-danger btn-sm fw-bold" title="Baja Física">🗑️ Eliminar</button>
+                                            </form>
+                                            
                                         </div>
                                     </td>
                                 </tr>
