@@ -15,21 +15,26 @@ import java.util.List;
 public class MultaScheduler {
 
     @Autowired
-    private PrestamoService prestamoService; // Usamos tu servicio para traer los préstamos
+    private PrestamoService prestamoService;
 
     @Autowired
     private UsuarioDao usuarioDao;
-
-    // Se ejecuta automáticamente todos los días a la medianoche (00:00)
-    // TIP: Para probarlo ahorita mismo, puedes comentar la línea de @Scheduled(cron...) 
-    // y descomentar la de @Scheduled(fixedRate = 60000) para que corra cada 1 minuto.
     
+    // --- NUEVO: Inyectamos el servicio de reglas de negocio ---
+    @Autowired
+    private ConfiguracionService configuracionService;
+
     @Scheduled(cron = "0 0 0 * * *")
     // @Scheduled(fixedRate = 60000) 
     public void calcularMultasDiarias() {
         System.out.println("🤖 [SISTEMA] Iniciando cálculo automático de multas por mora...");
+        
+        // --- NUEVO: Obtenemos la tarifa dinámica de la base de datos ---
+        com.biblioteca.virtual.domain.Configuracion config = configuracionService.obtenerConfiguracion();
+        double tarifaDiaria = config.getMultaDiaria();
 
         // 1. Obtenemos todos los usuarios y enceramos sus multas para evitar cobros duplicados
+        // (Nota: Tenemos pendiente revisar esta línea para no borrar las multas por daños)
         List<Usuario> todosLosUsuarios = (List<Usuario>) usuarioDao.findAll();
         for (Usuario u : todosLosUsuarios) {
             u.setMultaPendiente(0.0);
@@ -41,22 +46,17 @@ public class MultaScheduler {
 
         // 3. Revisamos uno por uno buscando a los morosos
         for (Prestamo prestamo : todosLosPrestamos) {
-            // Solo nos interesan los libros que NO han sido devueltos
             if ("ACTIVO".equalsIgnoreCase(prestamo.getEstado())) {
                 
-                // Extraemos la fecha límite (asumiendo que usaste LocalDate en tu modelo)
                 LocalDate fechaLimite = prestamo.getFechaDevolucion(); 
 
-                // Si la fecha límite ya pasó (es anterior a hoy)...
                 if (fechaLimite != null && hoy.isAfter(fechaLimite)) {
                     
-                    // Contamos cuántos días exactos han pasado
                     long diasAtraso = ChronoUnit.DAYS.between(fechaLimite, hoy);
                     
-                    // Multiplicamos por la tarifa de tu biblioteca (500 colones)
-                    double montoMulta = diasAtraso * 500.0;
+                    // --- NUEVO: Multiplicamos por la tarifa dinámica ---
+                    double montoMulta = diasAtraso * tarifaDiaria;
 
-                    // Le sumamos la multa al usuario dueño de este préstamo
                     Usuario usuario = prestamo.getUsuario();
                     if(usuario != null) {
                         usuario.setMultaPendiente(usuario.getMultaPendiente() + montoMulta);
@@ -65,7 +65,7 @@ public class MultaScheduler {
             }
         }
 
-        // 4. Guardamos todos los usuarios actualizados de golpe en la base de datos
+        // 4. Guardamos todos los usuarios actualizados de golpe
         usuarioDao.saveAll(todosLosUsuarios);
         System.out.println("🤖 [SISTEMA] Cálculo de multas finalizado con éxito.");
     }

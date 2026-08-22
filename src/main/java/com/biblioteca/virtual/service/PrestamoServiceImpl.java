@@ -23,6 +23,9 @@ public class PrestamoServiceImpl implements PrestamoService {
     
     @Autowired
     private UsuarioDao usuarioDao;
+    
+    @Autowired
+    private ConfiguracionService configuracionService;
 
     @Override
     @Transactional
@@ -36,7 +39,9 @@ public class PrestamoServiceImpl implements PrestamoService {
             throw new Exception("Cargos por mora, por favor normalizar para poder realizar la transaccion.");
         }
 
-        // --- DEFINIMOS LA VARIABLE AQUÍ PARA QUE TODO EL CÓDIGO DE ABAJO LA CONOZCA ---
+        // --- TRAEMOS LAS REGLAS DE NEGOCIO DINÁMICAS DESDE LA BASE DE DATOS ---
+        com.biblioteca.virtual.domain.Configuracion config = configuracionService.obtenerConfiguracion();
+
         java.util.List<com.biblioteca.virtual.domain.Prestamo> historialPrestamos = this.obtenerPrestamosPorUsername(username);
         java.time.LocalDate hoy = java.time.LocalDate.now();
         
@@ -47,13 +52,13 @@ public class PrestamoServiceImpl implements PrestamoService {
             }
         }
 
-        // 3. Verificamos el límite máximo de libros prestados (Máximo 5)
+        // 3. Verificamos el límite máximo de libros prestados dinámicamente
         long librosActivos = historialPrestamos.stream()
                 .filter(p -> "ACTIVO".equalsIgnoreCase(p.getEstado()))
                 .count();
                 
-        if (librosActivos >= 5) {
-            throw new Exception("Has alcanzado el límite máximo de 5 libros. Por favor, devuelve algún ejemplar antes de realizar nuevas reservas.");
+        if (librosActivos >= config.getMaxLibros()) {
+            throw new Exception("Has alcanzado el límite máximo de " + config.getMaxLibros() + " libros. Por favor, devuelve algún ejemplar antes de realizar nuevas reservas.");
         }
 
         // 4. Verificamos disponibilidad de inventario
@@ -69,7 +74,8 @@ public class PrestamoServiceImpl implements PrestamoService {
         nuevoPrestamo.setLibro(libro);
         nuevoPrestamo.setUsuario(usuario);
         nuevoPrestamo.setFechaPrestamo(hoy);
-        nuevoPrestamo.setFechaDevolucion(hoy.plusDays(7)); // 7 días de tiempo
+        // Aplicamos los días de préstamo dinámicos
+        nuevoPrestamo.setFechaDevolucion(hoy.plusDays(config.getDiasPrestamo())); 
         nuevoPrestamo.setEstado("ACTIVO");
 
         prestamoDao.save(nuevoPrestamo);
@@ -81,6 +87,7 @@ public class PrestamoServiceImpl implements PrestamoService {
         Usuario usuario = usuarioDao.findByUsername(username);
         return prestamoDao.findByUsuario(usuario);
     }
+
     @Override
     @Transactional
     public void devolverLibro(Long idPrestamo, String username) throws Exception {
@@ -103,16 +110,13 @@ public class PrestamoServiceImpl implements PrestamoService {
         
         // Guardamos el cambio de estado
         prestamoDao.save(prestamo);
-        
-        // Nota Arquitectónica: Aún NO liberamos el libro para que otro lo reserve. 
-        // El stock solo se actualizará cuando el Admin confirme que el libro está en buen estado.
     }
 
     @Override
     public java.util.List<com.biblioteca.virtual.domain.Prestamo> getPrestamos() {
-        // Le pedimos al DAO que busque todos los préstamos reales en la base de datos
         return (java.util.List<com.biblioteca.virtual.domain.Prestamo>) prestamoDao.findAll();
     }
+
     @Override
     @Transactional
     public void procesarRevision(Long idPrestamo, String evaluacion) throws Exception {
