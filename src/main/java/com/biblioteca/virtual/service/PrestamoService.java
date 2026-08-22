@@ -15,4 +15,6 @@ public interface PrestamoService {
     void devolverLibro(Long idPrestamo, String username) throws Exception;
 
     public List<Prestamo> getPrestamos();
+    
+    void procesarRevision(Long idPrestamo, String evaluacion) throws Exception;
 }

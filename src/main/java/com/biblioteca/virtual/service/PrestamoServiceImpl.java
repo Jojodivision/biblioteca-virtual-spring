@@ -27,48 +27,52 @@ public class PrestamoServiceImpl implements PrestamoService {
     @Override
     @Transactional
     public void realizarPrestamo(Long idLibro, String username) throws Exception {
-        // 1. Buscamos el libro en la base de datos
-        Libro libro = libroDao.findById(idLibro).orElseThrow(() -> new Exception("Libro no encontrado"));
-        
-        // 2. Verificamos que haya unidades disponibles
-        if (libro.getCantidad() <= 0) {
-            throw new Exception("No hay unidades disponibles de este libro.");
-        }
+        com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(username);
+        com.biblioteca.virtual.domain.Libro libro = libroDao.findById(idLibro)
+                .orElseThrow(() -> new Exception("El libro no existe en el catálogo."));
 
-        // 3. Buscamos al estudiante que tiene la sesión iniciada
-        Usuario usuario = usuarioDao.findByUsername(username);
-        if (usuario == null) {
-            throw new Exception("Usuario no encontrado.");
-        }
-        // NUEVO: Doble Validación de Morosidad (Candado de Seguridad)
-        //Verificamos si ya tiene saldo pendiente cobrado por el sistema nocturno
+        // 1. Verificamos si ya tiene saldo pendiente cobrado por el sistema
         if (usuario.getMultaPendiente() != null && usuario.getMultaPendiente() > 0) {
             throw new Exception("Cargos por mora, por favor normalizar para poder realizar la transaccion.");
         }
-        
-        // 2. Verificamos EN TIEMPO REAL si tiene algún libro vencido hoy
-        var historialPrestamos = this.obtenerPrestamosPorUsername(usuario.getUsername()); // Usamos tu método existente
+
+        // --- DEFINIMOS LA VARIABLE AQUÍ PARA QUE TODO EL CÓDIGO DE ABAJO LA CONOZCA ---
+        java.util.List<com.biblioteca.virtual.domain.Prestamo> historialPrestamos = this.obtenerPrestamosPorUsername(username);
         java.time.LocalDate hoy = java.time.LocalDate.now();
         
+        // 2. Verificamos EN TIEMPO REAL si tiene algún libro vencido hoy
         for (com.biblioteca.virtual.domain.Prestamo p : historialPrestamos) {
             if ("ACTIVO".equalsIgnoreCase(p.getEstado()) && p.getFechaDevolucion() != null && p.getFechaDevolucion().isBefore(hoy)) {
                 throw new Exception("Cargos por mora, por favor normalizar para poder realizar la transaccion.");
             }
         }
-        // 4. Creamos el recibo
-        Prestamo prestamo = new Prestamo();
-        prestamo.setLibro(libro);
-        prestamo.setUsuario(usuario);
-        prestamo.setFechaPrestamo(LocalDate.now());
-        prestamo.setFechaDevolucion(LocalDate.now().plusDays(7)); // Tienen 7 días para devolverlo
-        prestamo.setEstado("ACTIVO");
 
-        // 5. Descontamos 1 unidad del inventario físico
-        libro.setCantidad(libro.getCantidad() - 1);
+        // 3. Verificamos el límite máximo de libros prestados (Máximo 5)
+        long librosActivos = historialPrestamos.stream()
+                .filter(p -> "ACTIVO".equalsIgnoreCase(p.getEstado()))
+                .count();
+                
+        if (librosActivos >= 5) {
+            throw new Exception("Has alcanzado el límite máximo de 5 libros. Por favor, devuelve algún ejemplar antes de realizar nuevas reservas.");
+        }
 
-        // 6. Guardamos los cambios en la base de datos
+        // 4. Verificamos disponibilidad de inventario
+        if (libro.getCantidad() <= 0) {
+            throw new Exception("No hay ejemplares disponibles por el momento.");
+        }
+
+        // 5. ¡Todo en orden! Procesamos el préstamo
+        libro.setCantidad(libro.getCantidad() - 1); // Restamos 1 al stock
         libroDao.save(libro);
-        prestamoDao.save(prestamo);
+
+        com.biblioteca.virtual.domain.Prestamo nuevoPrestamo = new com.biblioteca.virtual.domain.Prestamo();
+        nuevoPrestamo.setLibro(libro);
+        nuevoPrestamo.setUsuario(usuario);
+        nuevoPrestamo.setFechaPrestamo(hoy);
+        nuevoPrestamo.setFechaDevolucion(hoy.plusDays(7)); // 7 días de tiempo
+        nuevoPrestamo.setEstado("ACTIVO");
+
+        prestamoDao.save(nuevoPrestamo);
     }
 
     @Override
@@ -80,35 +84,65 @@ public class PrestamoServiceImpl implements PrestamoService {
     @Override
     @Transactional
     public void devolverLibro(Long idPrestamo, String username) throws Exception {
-        // 1. Buscamos el recibo
-        Prestamo prestamo = prestamoDao.findById(idPrestamo)
-                .orElseThrow(() -> new Exception("Préstamo no encontrado"));
+        // 1. Buscamos el recibo en la base de datos
+        com.biblioteca.virtual.domain.Prestamo prestamo = prestamoDao.findById(idPrestamo)
+                .orElseThrow(() -> new Exception("El recibo de préstamo no existe."));
 
-        // 2. Seguridad: Verificamos que el recibo le pertenezca a quien inició sesión
+        // 2. Seguridad: Validamos que el libro sea del estudiante correcto
         if (!prestamo.getUsuario().getUsername().equals(username)) {
-            throw new Exception("No tienes permiso para modificar este recibo.");
+            throw new Exception("No tienes permiso para devolver este ejemplar.");
         }
 
-        // 3. Verificamos que no esté devuelto ya
-        if ("DEVUELTO".equals(prestamo.getEstado())) {
-            throw new Exception("Este libro ya fue devuelto anteriormente.");
+        // 3. Validamos que el libro realmente esté prestado
+        if (!"ACTIVO".equalsIgnoreCase(prestamo.getEstado())) {
+            throw new Exception("Este ejemplar ya fue entregado o se encuentra actualmente en revisión.");
         }
 
-        // 4. Cambiamos el estado del recibo
-        prestamo.setEstado("DEVUELTO");
-
-        // 5. Le sumamos 1 al inventario físico del libro
-        Libro libro = prestamo.getLibro();
-        libro.setCantidad(libro.getCantidad() + 1);
-
-        // 6. Guardamos los cambios
+        // 4. NUEVO FLUJO: El libro pasa a la mesa de inspección del administrador
+        prestamo.setEstado("EN REVISION");
+        
+        // Guardamos el cambio de estado
         prestamoDao.save(prestamo);
-        libroDao.save(libro);
+        
+        // Nota Arquitectónica: Aún NO liberamos el libro para que otro lo reserve. 
+        // El stock solo se actualizará cuando el Admin confirme que el libro está en buen estado.
     }
 
     @Override
     public java.util.List<com.biblioteca.virtual.domain.Prestamo> getPrestamos() {
         // Le pedimos al DAO que busque todos los préstamos reales en la base de datos
         return (java.util.List<com.biblioteca.virtual.domain.Prestamo>) prestamoDao.findAll();
+    }
+    @Override
+    @Transactional
+    public void procesarRevision(Long idPrestamo, String evaluacion) throws Exception {
+        com.biblioteca.virtual.domain.Prestamo prestamo = prestamoDao.findById(idPrestamo)
+                .orElseThrow(() -> new Exception("El recibo no existe."));
+        
+        com.biblioteca.virtual.domain.Usuario usuario = prestamo.getUsuario();
+        com.biblioteca.virtual.domain.Libro libro = prestamo.getLibro();
+        Double multaActual = usuario.getMultaPendiente() != null ? usuario.getMultaPendiente() : 0.0;
+
+        switch (evaluacion) {
+            case "OPTIMO":
+                libro.setCantidad(libro.getCantidad() + 1); // Vuelve al estante intacto
+                break;
+            case "DANO_PARCIAL":
+                usuario.setMultaPendiente(multaActual + 5000.0);
+                libro.setCantidad(libro.getCantidad() + 1); // Vuelve al estante reparado
+                break;
+            case "DANO_TOTAL":
+                usuario.setMultaPendiente(multaActual + 15000.0);
+                // NO sumamos el libro al catálogo porque quedó destruido
+                break;
+            default:
+                throw new Exception("Evaluación no válida");
+        }
+
+        prestamo.setEstado("DEVUELTO"); // Terminamos el ciclo
+        
+        usuarioDao.save(usuario);
+        libroDao.save(libro);
+        prestamoDao.save(prestamo);
     }
 }

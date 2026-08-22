@@ -189,4 +189,16 @@ public class LibroController {
     public String login() {
         return "login"; 
     }
+    @PostMapping("/prestamos/revision/{id}")
+    public String evaluarDevolucion(@PathVariable("id") Long idPrestamo, @RequestParam("evaluacion") String evaluacion, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        try {
+            prestamoService.procesarRevision(idPrestamo, evaluacion);
+            redirectAttributes.addFlashAttribute("mensaje", "Revisión completada. Estado del inventario actualizado.");
+            redirectAttributes.addFlashAttribute("tipo", "success");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensaje", e.getMessage());
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+        }
+        return "redirect:/prestamos";
+    }
 }

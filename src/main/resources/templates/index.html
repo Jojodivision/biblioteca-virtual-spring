@@ -110,7 +110,7 @@
                         </table>
                     </div>
 
-                    <div th:if="${libros == null or libros.empty}" class="alert alert-warning text-center" role="alert">
+                    <div th:if="${#lists.isEmpty(libros) and (palabraClave == null or palabraClave == '')}">
                         No hay libros registrados en el catálogo en este momento.
                     </div>
 
