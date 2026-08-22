@@ -18,7 +18,7 @@
                         <li class="nav-item me-3">
                             <a class="nav-link text-white fw-bold" th:href="@{/prestamos}">🔖 Préstamos</a>
                         </li>
-                        
+
                         <!-- NUEVO: Botón de Encargos -->
                         <li class="nav-item me-3">
                             <a class="nav-link text-white fw-bold" th:href="@{/encargos}">📦 Encargos</a>
@@ -35,7 +35,7 @@
                         <li class="nav-item">
                             <a class="nav-link text-warning fw-bold" th:href="@{/perfil}">👤 Mi Perfil</a>
                         </li>
-                        
+
                         <!-- Cerrar Sesión -->
                         <li class="nav-item ms-3">
                             <form th:action="@{/logout}" method="post" class="m-0">
@@ -63,6 +63,16 @@
                     <a th:href="@{/}" class="btn btn-outline-secondary fw-bold">Limpiar</a>
                 </div>
             </form>
+            <!-- FASE 4: EL PUENTE INTELIGENTE HACIA ENCARGOS -->
+            <div th:if="${#lists.isEmpty(libros) and palabraClave != null and palabraClave != ''}" class="alert alert-warning text-center py-5 shadow-sm border-0 rounded-3 mb-4 mt-4">
+                <h3 class="fw-bold text-dark mb-3">No encontramos resultados para "<span class="text-primary" th:text="${palabraClave}"></span>" 🕵️‍♂️</h3>
+                <p class="text-secondary mb-4 fs-5">Parece que aún no tenemos este título en nuestra colección. ¿Te gustaría solicitar que la biblioteca lo adquiera?</p>
+
+                <!-- El enlace mágico que redirige al nuevo módulo -->
+                <a th:href="@{/encargos}" class="btn btn-warning btn-lg fw-bold shadow-sm border border-warning">
+                    📦 Solicitar a la Administración
+                </a>
+            </div>
 
             <div class="card shadow-sm">
                 <div class="card-body">
