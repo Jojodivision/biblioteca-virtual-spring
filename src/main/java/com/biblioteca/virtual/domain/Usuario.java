@@ -20,9 +20,14 @@ public class Usuario implements Serializable {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(name = "contrasena")
+    // 1. Restauramos tu contraseña para que apunte a la columna correcta y segura
     private String password;
 
+    // 2. Truco: Creamos un "campo fantasma" solo para que MySQL deje de quejarse
+    // al crear nuevos usuarios, llenando esa columna vieja obligatoria.
+    @Column(name = "contrasena")
+    private String contrasenaVieja = "legacy";
+    
     private String rol;
 
     @Column(unique = true)
