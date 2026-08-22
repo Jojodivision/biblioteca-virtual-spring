@@ -1,8 +1,9 @@
 package com.biblioteca.virtual.controller;
 
-import com.biblioteca.virtual.domain.Libro;
+import com.biblioteca.virtual.domain.Libro; 
 import com.biblioteca.virtual.service.LibroService;
 import com.biblioteca.virtual.service.PrestamoService;
+import com.biblioteca.virtual.service.EncargoService; // <-- NUEVO SERVICIO INYECTADO
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -10,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @Slf4j
@@ -17,184 +19,174 @@ public class LibroController {
 
     @Autowired
     private LibroService libroService;
-
-    @Autowired
+    
+    @Autowired 
     private PrestamoService prestamoService;
 
     @Autowired
+    private EncargoService encargoService; // <-- Conectamos el cerebro de los encargos
+    
+    @Autowired
     private com.biblioteca.virtual.dao.UsuarioDao usuarioDao;
 
-    // --- PRIMER MÉTODO: Mostrar la página principal y el buscador ---
+    // --- CATÁLOGO ---
     @GetMapping("/")
-    public String inicio(Model model, @org.springframework.web.bind.annotation.RequestParam(value = "palabraClave", required = false) String palabraClave) {
+    public String inicio(Model model, @RequestParam(value = "palabraClave", required = false) String palabraClave) {
         log.info("Ejecutando el controlador Spring MVC de la Biblioteca");
-
         java.util.List<Libro> libros;
-
-        // Si el usuario escribió algo en el buscador, usamos tu nuevo método
+        
         if (palabraClave != null && !palabraClave.isBlank()) {
             libros = libroService.buscarLibros(palabraClave);
         } else {
-            // Si la barra está vacía, mostramos todo el catálogo
             libros = libroService.getLibros();
         }
 
-        // Compartimos los datos con el HTML
         model.addAttribute("libros", libros);
-        model.addAttribute("palabraClave", palabraClave); // Para que el texto no se borre de la barra al buscar
-
+        model.addAttribute("palabraClave", palabraClave); 
         return "index";
     }
 
-    // --- SEGUNDO MÉTODO: Mostrar el formulario vacío ---
     @GetMapping("/agregar")
     public String agregar(Libro libro) {
-        // Spring Boot automáticamente inyecta un objeto Libro vacío en el modelo
         return "modificar";
     }
 
-    // --- TERCER MÉTODO: Atrapar los datos del formulario y guardarlos ---
     @PostMapping("/guardar")
     public String guardar(Libro libro) {
-        // Le pasamos el libro lleno con los datos del formulario al servicio
         libroService.save(libro);
-
-        // Redirigimos a la página principal para ver la tabla actualizada
         return "redirect:/";
     }
-
-    // --- RUTA PARA RESERVAR UN LIBRO ---
+    
+    // --- MOTOR DE RESERVAS ---
     @PostMapping("/reservar/{id}")
     public String reservarLibro(@PathVariable("id") Long idLibro, java.security.Principal principal, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        // Si no hay sesión iniciada, lo mandamos al login
-        if (principal == null) {
-            return "redirect:/login";
-        }
-
+        if (principal == null) return "redirect:/login";
+        
         try {
-            // Mandamos a llamar tu lógica matemática
             prestamoService.realizarPrestamo(idLibro, principal.getName());
-
             redirectAttributes.addFlashAttribute("mensaje", "¡Libro reservado con éxito! Tienes 7 días para devolverlo.");
             redirectAttributes.addFlashAttribute("tipo", "success");
         } catch (Exception e) {
-            // Si no hay stock o hay un error, mostramos una alerta roja
             redirectAttributes.addFlashAttribute("mensaje", e.getMessage());
             redirectAttributes.addFlashAttribute("tipo", "danger");
         }
-        return "redirect:/"; // Lo devolvemos al catálogo principal
+        return "redirect:/"; 
     }
 
-    // --- RUTA PARA VER EL PERFIL DEL ESTUDIANTE ---
-    // --- RUTA 1: PERFIL DEL ESTUDIANTE (DATOS PERSONALES) ---
-    @GetMapping("/perfil")
-    public String verPerfil(org.springframework.ui.Model model, java.security.Principal principal) {
-        if (principal == null) {
-            return "redirect:/login";
-        }
-
-        // Buscamos toda la información personal del estudiante en la base de datos
-        com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
-
-        // Enviamos el objeto 'usuario' completo a la vista
-        model.addAttribute("usuario", usuario);
-
-        return "perfil"; // Mostrará la nueva tarjeta de datos personales
-    }
-
-    // --- NUEVA RUTA: ACTUALIZAR DATOS DEL PERFIL ---
-    @PostMapping("/perfil/actualizar")
-    public String actualizarPerfil(
-            @org.springframework.web.bind.annotation.RequestParam("nombre") String nombre,
-            @org.springframework.web.bind.annotation.RequestParam("primerApellido") String primerApellido,
-            @org.springframework.web.bind.annotation.RequestParam("segundoApellido") String segundoApellido,
-            java.security.Principal principal,
-            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-
-        if (principal == null) {
-            return "redirect:/login";
-        }
-
-        try {
-            // Buscamos al usuario que tiene la sesión iniciada
-            com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
-
-            // Le asignamos los nuevos valores
-            usuario.setNombre(nombre);
-            usuario.setPrimerApellido(primerApellido);
-            usuario.setSegundoApellido(segundoApellido);
-
-            // Guardamos los cambios en la BD
-            usuarioDao.save(usuario);
-
-            redirectAttributes.addFlashAttribute("mensaje", "¡Tus datos personales han sido actualizados!");
-            redirectAttributes.addFlashAttribute("tipo", "success");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("mensaje", "Hubo un error al actualizar el perfil.");
-            redirectAttributes.addFlashAttribute("tipo", "danger");
-        }
-
-        return "redirect:/perfil";
-    }
-
-    // --- RUTA 2: HISTORIAL DE PRÉSTAMOS (INTELIGENTE POR ROL) ---
-    @GetMapping("/prestamos")
-    public String verPrestamos(org.springframework.ui.Model model, java.security.Principal principal) {
-        if (principal == null) {
-            return "redirect:/login";
-        }
-
-        com.biblioteca.virtual.domain.Usuario usuarioActual = usuarioDao.findByUsername(principal.getName());
-        java.util.List<com.biblioteca.virtual.domain.Prestamo> prestamos;
-        boolean esAdmin = "ROLE_ADMIN".equals(usuarioActual.getRol());
-
-        if (esAdmin) {
-            // El administrador ve TODOS los préstamos de la biblioteca
-            prestamos = prestamoService.getPrestamos();
-        } else {
-            // El estudiante solo ve sus propios recibos
-            prestamos = prestamoService.obtenerPrestamosPorUsername(principal.getName());
-        }
-
-        model.addAttribute("prestamos", prestamos);
-        model.addAttribute("esAdmin", esAdmin); // Le pasamos a la vista HTML si es admin o no
-
-        return "prestamos";
-    }
-
-    // --- RUTA 3: SISTEMA DE ENCARGOS ---
-    @GetMapping("/encargos")
-    public String verEncargos(org.springframework.ui.Model model, java.security.Principal principal) {
-        if (principal == null) {
-            return "redirect:/login";
-        }
-
-        // Por ahora solo creamos el puente. Más adelante le agregaremos la lógica matemática.
-        return "encargos"; // Buscará un nuevo archivo encargos.html
-    }
-
-    @GetMapping("/login")
-    public String login() {
-        return "login"; // Busca el archivo login.html 
-    }
-
-    // --- RUTA PARA DEVOLVER UN LIBRO ---
     @PostMapping("/devolver/{id}")
     public String devolverLibro(@PathVariable("id") Long idPrestamo, java.security.Principal principal, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
-        if (principal == null) {
-            return "redirect:/login";
-        }
-
+        if (principal == null) return "redirect:/login";
+        
         try {
             prestamoService.devolverLibro(idPrestamo, principal.getName());
-
             redirectAttributes.addFlashAttribute("mensaje", "¡Libro devuelto con éxito! Gracias por cuidarlo.");
             redirectAttributes.addFlashAttribute("tipo", "success");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("mensaje", e.getMessage());
             redirectAttributes.addFlashAttribute("tipo", "danger");
         }
+        return "redirect:/prestamos"; 
+    }
 
-        return "redirect:/prestamos";
+    // --- PERFIL Y PRÉSTAMOS ---
+    @GetMapping("/perfil")
+    public String verPerfil(Model model, java.security.Principal principal) {
+        if (principal == null) return "redirect:/login";
+        com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
+        model.addAttribute("usuario", usuario);
+        return "perfil"; 
+    }
+
+    @PostMapping("/perfil/actualizar")
+    public String actualizarPerfil(
+            @RequestParam("nombre") String nombre,
+            @RequestParam("primerApellido") String primerApellido,
+            @RequestParam("segundoApellido") String segundoApellido,
+            java.security.Principal principal,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        if (principal == null) return "redirect:/login";
+
+        try {
+            com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
+            usuario.setNombre(nombre);
+            usuario.setPrimerApellido(primerApellido);
+            usuario.setSegundoApellido(segundoApellido);
+            usuarioDao.save(usuario);
+            redirectAttributes.addFlashAttribute("mensaje", "¡Tus datos personales han sido actualizados!");
+            redirectAttributes.addFlashAttribute("tipo", "success");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("mensaje", "Hubo un error al actualizar el perfil.");
+            redirectAttributes.addFlashAttribute("tipo", "danger");
+        }
+        return "redirect:/perfil";
+    }
+
+    @GetMapping("/prestamos")
+    public String verPrestamos(Model model, java.security.Principal principal) {
+        if (principal == null) return "redirect:/login";
+        
+        com.biblioteca.virtual.domain.Usuario usuarioActual = usuarioDao.findByUsername(principal.getName());
+        boolean esAdmin = "ROLE_ADMIN".equals(usuarioActual.getRol());
+        
+        java.util.List<com.biblioteca.virtual.domain.Prestamo> prestamos;
+        if (esAdmin) {
+            prestamos = prestamoService.getPrestamos(); 
+        } else {
+            prestamos = prestamoService.obtenerPrestamosPorUsername(principal.getName());
+        }
+        
+        model.addAttribute("prestamos", prestamos);
+        model.addAttribute("esAdmin", esAdmin); 
+        return "prestamos"; 
+    }
+
+    // --- NUEVO: MÓDULO DE ENCARGOS ---
+    @GetMapping("/encargos")
+    public String verEncargos(Model model, java.security.Principal principal) {
+        if (principal == null) return "redirect:/login";
+        
+        com.biblioteca.virtual.domain.Usuario usuarioActual = usuarioDao.findByUsername(principal.getName());
+        boolean esAdmin = "ROLE_ADMIN".equals(usuarioActual.getRol());
+        
+        java.util.List<com.biblioteca.virtual.domain.Encargo> encargos;
+        if (esAdmin) {
+            encargos = encargoService.getTodosLosEncargos();
+        } else {
+            encargos = encargoService.getEncargosPorUsuario(principal.getName());
+        }
+        
+        model.addAttribute("encargos", encargos);
+        model.addAttribute("esAdmin", esAdmin);
+        model.addAttribute("nuevoEncargo", new com.biblioteca.virtual.domain.Encargo()); // Objeto vacío para el form
+        
+        return "encargos";
+    }
+
+    @PostMapping("/encargos/guardar")
+    public String guardarEncargo(com.biblioteca.virtual.domain.Encargo encargo, java.security.Principal principal, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        if (principal == null) return "redirect:/login";
+        
+        // Asociamos el encargo al estudiante que lo está pidiendo
+        com.biblioteca.virtual.domain.Usuario usuarioActual = usuarioDao.findByUsername(principal.getName());
+        encargo.setUsuario(usuarioActual);
+        
+        encargoService.guardarEncargo(encargo);
+        
+        redirectAttributes.addFlashAttribute("mensaje", "¡Tu solicitud ha sido enviada con éxito! La administración la revisará pronto.");
+        redirectAttributes.addFlashAttribute("tipo", "success");
+        return "redirect:/encargos";
+    }
+
+    @PostMapping("/encargos/actualizar/{id}")
+    public String actualizarEstadoEncargo(@PathVariable("id") Long idEncargo, @RequestParam("estado") String estado, org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
+        encargoService.actualizarEstado(idEncargo, estado);
+        redirectAttributes.addFlashAttribute("mensaje", "El estado de la solicitud ha sido actualizado a: " + estado);
+        redirectAttributes.addFlashAttribute("tipo", "success");
+        return "redirect:/encargos";
+    }
+    
+    @GetMapping("/login")
+    public String login() {
+        return "login"; 
     }
 }

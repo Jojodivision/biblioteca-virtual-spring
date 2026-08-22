@@ -1,15 +1,141 @@
 <!DOCTYPE html>
-<!--
-Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
-Click nbfs://nbhost/SystemFileSystem/Templates/Other/html.html to edit this template
--->
-<html>
-    <head>
-        <title>TODO supply a title</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-        <div>TODO write content</div>
-    </body>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Encargos | Biblioteca Virtual</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- NAVBAR ESTANDARIZADO -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">📚 Biblioteca Virtual</a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item me-3">
+                        <a class="nav-link text-white fw-bold" th:href="@{/prestamos}">🔖 Préstamos</a>
+                    </li>
+                    <li class="nav-item me-3">
+                        <a class="nav-link text-warning fw-bold text-decoration-underline" th:href="@{/encargos}">📦 Encargos</a>
+                    </li>
+                    <li class="nav-item me-3">
+                        <a class="nav-link text-danger fw-bold" th:href="@{/multas}">💰 Mis Multas</a>
+                    </li>
+                    <li class="nav-item me-3" sec:authorize="hasAuthority('ROLE_ADMIN')">
+                        <a class="nav-link text-white fw-bold" th:href="@{/usuarios}">⚙️ Gestión de Usuarios</a>
+                    </li>
+                    <li class="nav-item me-3">
+                        <a class="nav-link text-white fw-bold" th:href="@{/perfil}">👤 Mi Perfil</a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <form th:action="@{/logout}" method="post" class="m-0">
+                            <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent">🚪 Salir</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <!-- Alertas de éxito -->
+        <div th:if="${mensaje}" th:classappend="'alert-' + ${tipo}" class="alert alert-dismissible fade show shadow-sm" role="alert">
+            <span th:text="${mensaje}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col">
+                <h2 class="text-secondary fw-bold" th:text="${esAdmin ? 'Bandeja de Adquisiciones' : 'Solicitar Nuevo Libro'}">Encargos</h2>
+                <p class="text-muted" th:text="${esAdmin ? 'Administra las solicitudes de nuevos libros realizadas por los estudiantes.' : '¿No encontraste el libro que buscabas? Solicítalo aquí para que la biblioteca lo adquiera.'}"></p>
+            </div>
+        </div>
+
+        <!-- VISTA ESTUDIANTE: Formulario para crear un encargo -->
+        <div class="card shadow-sm border-0 rounded-3 mb-5" th:if="${!esAdmin}">
+            <div class="card-header bg-dark text-white fw-bold py-3">
+                ➕ Nueva Solicitud
+            </div>
+            <div class="card-body p-4">
+                <form th:action="@{/encargos/guardar}" th:object="${nuevoEncargo}" method="post">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary">Título Sugerido *</label>
+                            <input type="text" class="form-control" th:field="*{titulo}" required placeholder="Ej: Clean Code">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-secondary">Autor / Editorial</label>
+                            <input type="text" class="form-control" th:field="*{autor}" placeholder="Ej: Robert C. Martin">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-secondary">Justificación Académica (Opcional)</label>
+                            <textarea class="form-control" th:field="*{justificacion}" rows="2" placeholder="¿Para qué curso o proyecto lo necesitas?"></textarea>
+                        </div>
+                        <div class="col-12 mt-4 text-end">
+                            <button type="submit" class="btn btn-primary fw-bold px-4">Enviar Solicitud</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- TABLA COMPARTIDA: Historial de solicitudes -->
+        <div class="card shadow-sm border-0 rounded-3 mb-5">
+            <div class="card-header bg-secondary text-white fw-bold py-3">
+                📋 Historial de Solicitudes
+            </div>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th th:if="${esAdmin}">Estudiante</th>
+                            <th>Título</th>
+                            <th>Autor</th>
+                            <th>Estado</th>
+                            <th th:if="${esAdmin}">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(encargos)}">
+                            <td th:colspan="${esAdmin ? 6 : 4}" class="py-4 text-muted fw-bold">
+                                No hay solicitudes de encargos registradas.
+                            </td>
+                        </tr>
+                        <tr th:each="encargo : ${encargos}">
+                            <td th:text="${encargo.fechaSolicitud}"></td>
+                            <td th:if="${esAdmin}" class="text-primary fw-bold" th:text="${encargo.usuario.nombre + ' ' + encargo.usuario.primerApellido}"></td>
+                            <td class="fw-bold" th:text="${encargo.titulo}"></td>
+                            <td th:text="${encargo.autor}"></td>
+                            <td>
+                                <span th:class="${encargo.estado == 'Pendiente' ? 'badge bg-warning text-dark' : (encargo.estado == 'Aprobado' ? 'badge bg-success' : 'badge bg-danger')}"
+                                      th:text="${encargo.estado}"></span>
+                            </td>
+                            <td th:if="${esAdmin}">
+                                <!-- Botones de Aprobación/Rechazo para el Admin -->
+                                <div th:if="${encargo.estado == 'Pendiente'}" class="d-flex justify-content-center gap-2">
+                                    <form th:action="@{'/encargos/actualizar/' + ${encargo.idEncargo}}" method="post">
+                                        <input type="hidden" name="estado" value="Aprobado">
+                                        <button type="submit" class="btn btn-success btn-sm fw-bold">Aprobar</button>
+                                    </form>
+                                    <form th:action="@{'/encargos/actualizar/' + ${encargo.idEncargo}}" method="post">
+                                        <input type="hidden" name="estado" value="Rechazado">
+                                        <button type="submit" class="btn btn-danger btn-sm fw-bold">Rechazar</button>
+                                    </form>
+                                </div>
+                                <span th:if="${encargo.estado != 'Pendiente'}" class="text-muted fst-italic">Procesado</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
