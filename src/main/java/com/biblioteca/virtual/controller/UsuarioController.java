@@ -228,6 +228,7 @@ public class UsuarioController {
         if (usuario != null) {
             // El estudiante pagó, enceramos la deuda
             usuario.setMultaPendiente(0.0);
+            usuario.setMultaDanos(0.0); 
             usuarioService.save(usuario);
             
             redirectAttributes.addFlashAttribute("mensaje", "La cuenta de " + usuario.getNombre() + " ha sido normalizada (Saldo: ₡0). Ya puede realizar préstamos nuevamente.");

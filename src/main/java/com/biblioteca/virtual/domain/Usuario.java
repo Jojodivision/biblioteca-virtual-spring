@@ -8,26 +8,26 @@ import lombok.Data;
 @Entity
 @Table(name = "usuario")
 public class Usuario implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
 
     // --- TU MOTOR DE SEGURIDAD ---
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_usuario")
-    private Long idUsuario; 
+    private Long idUsuario;
 
     @Column(unique = true, nullable = false)
-    private String username; 
+    private String username;
 
     @Column(nullable = false)
-    private String password; 
+    private String password;
 
-    private String rol; 
+    private String rol;
 
     // --- EL PERFIL DE TU COMPAÑERO ---
     @Column(unique = true)
-    private Long identificacion; 
+    private Long identificacion;
 
     @Column(nullable = false)
     private String nombre;
@@ -39,16 +39,16 @@ public class Usuario implements Serializable {
     private String segundoApellido;
 
     @Column(name = "correo_electronico", unique = true, nullable = false)
-    private String correo; 
+    private String correo;
 
     private String telefono;
 
     private boolean activo = true;
-    
+
     // Atributo para el control de morosidad (en colones)
     private Double multaPendiente = 0.0;
 
-
-
+    @Column(name = "multa_danos")
+    private Double multaDanos = 0.0;
 
 }

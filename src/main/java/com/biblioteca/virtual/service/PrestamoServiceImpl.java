@@ -34,9 +34,12 @@ public class PrestamoServiceImpl implements PrestamoService {
         com.biblioteca.virtual.domain.Libro libro = libroDao.findById(idLibro)
                 .orElseThrow(() -> new Exception("El libro no existe en el catálogo."));
 
-        // 1. Verificamos si ya tiene saldo pendiente cobrado por el sistema
-        if (usuario.getMultaPendiente() != null && usuario.getMultaPendiente() > 0) {
-            throw new Exception("Cargos por mora, por favor normalizar para poder realizar la transaccion.");
+        // 1. Verificamos si ya tiene saldo pendiente (mora o daños físicos)
+        Double mora = usuario.getMultaPendiente() != null ? usuario.getMultaPendiente() : 0.0;
+        Double danos = usuario.getMultaDanos() != null ? usuario.getMultaDanos() : 0.0;
+        
+        if (mora > 0 || danos > 0) {
+            throw new Exception("Tienes cargos pendientes por morosidad o daños a ejemplares. Por favor normaliza tu situación para poder realizar reservas.");
         }
 
         // --- TRAEMOS LAS REGLAS DE NEGOCIO DINÁMICAS DESDE LA BASE DE DATOS ---
@@ -74,7 +77,6 @@ public class PrestamoServiceImpl implements PrestamoService {
         nuevoPrestamo.setLibro(libro);
         nuevoPrestamo.setUsuario(usuario);
         nuevoPrestamo.setFechaPrestamo(hoy);
-        // Aplicamos los días de préstamo dinámicos
         nuevoPrestamo.setFechaDevolucion(hoy.plusDays(config.getDiasPrestamo())); 
         nuevoPrestamo.setEstado("ACTIVO");
 
@@ -125,25 +127,25 @@ public class PrestamoServiceImpl implements PrestamoService {
         
         com.biblioteca.virtual.domain.Usuario usuario = prestamo.getUsuario();
         com.biblioteca.virtual.domain.Libro libro = prestamo.getLibro();
-        Double multaActual = usuario.getMultaPendiente() != null ? usuario.getMultaPendiente() : 0.0;
+        
+        Double multaDanosActual = usuario.getMultaDanos() != null ? usuario.getMultaDanos() : 0.0;
 
         switch (evaluacion) {
             case "OPTIMO":
-                libro.setCantidad(libro.getCantidad() + 1); // Vuelve al estante intacto
+                libro.setCantidad(libro.getCantidad() + 1); 
                 break;
             case "DANO_PARCIAL":
-                usuario.setMultaPendiente(multaActual + 5000.0);
-                libro.setCantidad(libro.getCantidad() + 1); // Vuelve al estante reparado
+                usuario.setMultaDanos(multaDanosActual + 5000.0);
+                libro.setCantidad(libro.getCantidad() + 1); 
                 break;
             case "DANO_TOTAL":
-                usuario.setMultaPendiente(multaActual + 15000.0);
-                // NO sumamos el libro al catálogo porque quedó destruido
+                usuario.setMultaDanos(multaDanosActual + 15000.0);
                 break;
             default:
                 throw new Exception("Evaluación no válida");
         }
 
-        prestamo.setEstado("DEVUELTO"); // Terminamos el ciclo
+        prestamo.setEstado("DEVUELTO"); 
         
         usuarioDao.save(usuario);
         libroDao.save(libro);

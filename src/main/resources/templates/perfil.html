@@ -1,132 +1,97 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <title>Mi Perfil | Biblioteca Virtual</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+    <head>
+        <title>Mi Perfil | Biblioteca Virtual</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
 
-    <!-- Navbar ESTANDARIZADO COMPLETO -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-5 shadow-sm">
+        <!-- Inyectamos la barra de navegación maestra -->
+        <div th:replace="~{fragmentos :: navbar}"></div>
+
         <div class="container">
-            <a class="navbar-brand fw-bold" href="/">📚 Biblioteca Virtual</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item me-3">
-                        <a class="nav-link text-white fw-bold" th:href="@{/prestamos}">🔖 Préstamos</a>
-                    </li>
-                    <li class="nav-item me-3">
-                        <a class="nav-link text-white fw-bold" th:href="@{/encargos}">📦 Encargos</a>
-                    </li>
 
-                    <!-- Botón de multas exclusivo para Admin -->
-                    <li class="nav-item me-3">
-                        <a class="nav-link text-danger fw-bold" th:href="@{/multas}">💰 Mis Multas</a>
-                    </li>
-
-                    <!-- Gestión de usuarios exclusivo para Admin -->
-                    <li class="nav-item me-3" sec:authorize="hasAuthority('ROLE_ADMIN')">
-                        <a class="nav-link text-white fw-bold" th:href="@{/usuarios}">⚙️ Gestión de Usuarios</a>
-                    </li>
-
-                    <!-- Perfil remarcado para saber que estamos aquí -->
-                    <li class="nav-item">
-                        <a class="nav-link text-warning fw-bold text-decoration-underline" th:href="@{/perfil}">👤 Mi Perfil</a>
-                    </li>
-                    
-                    <li class="nav-item ms-3">
-                        <form th:action="@{/logout}" method="post" class="m-0">
-                            <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent">🚪 Salir</button>
-                        </form>
-                    </li>
-                </ul>
+            <!-- Alertas de éxito/error -->
+            <div th:if="${mensaje}" th:classappend="'alert-' + ${tipo}" class="alert alert-dismissible fade show shadow-sm" role="alert">
+                <strong th:text="${tipo == 'success' ? '¡Excelente!' : 'Atención:'}"></strong> <span th:text="${mensaje}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
-        </div>
-    </nav>
 
-    <div class="container">
-        
-        <!-- Alertas de éxito/error -->
-        <div th:if="${mensaje}" th:classappend="'alert-' + ${tipo}" class="alert alert-dismissible fade show shadow-sm" role="alert">
-            <strong th:text="${tipo == 'success' ? '¡Excelente!' : 'Atención:'}"></strong> <span th:text="${mensaje}"></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
 
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                
-                <h2 class="text-secondary fw-bold mb-4 text-center">Información de la Cuenta</h2>
-                
-                <div class="card shadow-sm border-0 rounded-3">
-                    <div class="card-header bg-dark text-white d-flex justify-content-center align-items-center py-4 position-relative">
-                        <!-- Mostramos el nombre completo -->
-                        <h4 class="mb-0" th:text="${usuario.nombre + ' ' + usuario.primerApellido + ' ' + (usuario.segundoApellido != null ? usuario.segundoApellido : '')}">Nombre del Usuario</h4>
-                        
-                        <!-- Botón para abrir el Modal -->
-                        <button class="btn btn-warning btn-sm fw-bold position-absolute end-0 me-4" data-bs-toggle="modal" data-bs-target="#editarPerfilModal">✏️ Editar</button>
-                    </div>
-                    <div class="card-body p-5">
-                        <div class="row mb-3 pb-3 border-bottom">
-                            <div class="col-sm-4 fw-bold text-secondary">Nombre de Usuario (Login):</div>
-                            <div class="col-sm-8 text-primary fw-bold" th:text="${#authentication.name}">usuario123</div>
+                    <h2 class="text-secondary fw-bold mb-4 text-center">Información de la Cuenta</h2>
+
+                    <div class="card shadow-sm border-0 rounded-3">
+                        <div class="card-header bg-dark text-white d-flex justify-content-center align-items-center py-4 position-relative">
+                            <!-- Mostramos el nombre completo -->
+                            <h4 class="mb-0" th:text="${usuario.nombre + ' ' + usuario.primerApellido + ' ' + (usuario.segundoApellido != null ? usuario.segundoApellido : '')}">Nombre del Usuario</h4>
+
+                            <!-- Botón para abrir el Modal -->
+                            <button class="btn btn-warning btn-sm fw-bold position-absolute end-0 me-4" data-bs-toggle="modal" data-bs-target="#editarPerfilModal">✏️ Editar</button>
                         </div>
-                        <div class="row mb-3 pb-3 border-bottom">
-                            <div class="col-sm-4 fw-bold text-secondary">Correo Electrónico:</div>
-                            <div class="col-sm-8" th:text="${usuario.correo}">correo@ejemplo.com</div>
-                        </div>
-                        <div class="row mb-3 pb-3 border-bottom">
-                            <div class="col-sm-4 fw-bold text-secondary">Número de Teléfono:</div>
-                            <div class="col-sm-8" th:text="${usuario.telefono}">8888-8888</div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-sm-4 fw-bold text-secondary">Rol de Acceso:</div>
-                            <div class="col-sm-8">
-                                <span th:class="${usuario.rol == 'ROLE_ADMIN' ? 'badge bg-danger' : 'badge bg-success'}" 
-                                      th:text="${usuario.rol == 'ROLE_ADMIN' ? 'Administrador' : 'Estudiante'}">Rol</span>
+                        <div class="card-body p-5">
+                            <div class="row mb-3 pb-3 border-bottom">
+                                <div class="col-sm-4 fw-bold text-secondary">Nombre de Usuario (Login):</div>
+                                <div class="col-sm-8 text-primary fw-bold" th:text="${#authentication.name}">usuario123</div>
+                            </div>
+                            <div class="row mb-3 pb-3 border-bottom">
+                                <div class="col-sm-4 fw-bold text-secondary">Correo Electrónico:</div>
+                                <div class="col-sm-8" th:text="${usuario.correo}">correo@ejemplo.com</div>
+                            </div>
+                            <div class="row mb-3 pb-3 border-bottom">
+                                <div class="col-sm-4 fw-bold text-secondary">Número de Teléfono:</div>
+                                <div class="col-sm-8" th:text="${usuario.telefono}">8888-8888</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4 fw-bold text-secondary">Rol de Acceso:</div>
+                                <div class="col-sm-8">
+                                    <span th:class="${usuario.rol == 'ROLE_ADMIN' ? 'badge bg-danger' : 'badge bg-success'}" 
+                                          th:text="${usuario.rol == 'ROLE_ADMIN' ? 'Administrador' : 'Estudiante'}">Rol</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
-                
             </div>
         </div>
-    </div>
 
-    <!-- Modal de Bootstrap para Editar Perfil -->
-    <div class="modal fade" id="editarPerfilModal" tabindex="-1" aria-labelledby="editarPerfilModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold" id="editarPerfilModalLabel">Actualizar Mis Datos</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Modal de Bootstrap para Editar Perfil -->
+        <div class="modal fade" id="editarPerfilModal" tabindex="-1" aria-labelledby="editarPerfilModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title fw-bold" id="editarPerfilModalLabel">Actualizar Mis Datos</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <!-- Formulario que conecta con el Controlador -->
+                    <form th:action="@{/perfil/actualizar}" method="post">
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label for="nombre" class="form-label fw-bold text-secondary">Nombre</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" th:value="${usuario.nombre}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="primerApellido" class="form-label fw-bold text-secondary">Primer Apellido</label>
+                                <input type="text" class="form-control" id="primerApellido" name="primerApellido" th:value="${usuario.primerApellido}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="segundoApellido" class="form-label fw-bold text-secondary">Segundo Apellido</label>
+                                <input type="text" class="form-control" id="segundoApellido" name="segundoApellido" th:value="${usuario.segundoApellido}">
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success fw-bold">Guardar Cambios</button>
+                        </div>
+                    </form>
                 </div>
-                <!-- Formulario que conecta con el Controlador -->
-                <form th:action="@{/perfil/actualizar}" method="post">
-                    <div class="modal-body p-4">
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label fw-bold text-secondary">Nombre</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" th:value="${usuario.nombre}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="primerApellido" class="form-label fw-bold text-secondary">Primer Apellido</label>
-                            <input type="text" class="form-control" id="primerApellido" name="primerApellido" th:value="${usuario.primerApellido}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="segundoApellido" class="form-label fw-bold text-secondary">Segundo Apellido</label>
-                            <input type="text" class="form-control" id="segundoApellido" name="segundoApellido" th:value="${usuario.segundoApellido}">
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 bg-light">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success fw-bold">Guardar Cambios</button>
-                    </div>
-                </form>
             </div>
         </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
 </html>
