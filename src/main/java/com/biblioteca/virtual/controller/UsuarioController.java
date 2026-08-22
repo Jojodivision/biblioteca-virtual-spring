@@ -1,6 +1,7 @@
 package com.biblioteca.virtual.controller;
 
 import com.biblioteca.virtual.domain.Usuario;
+import com.biblioteca.virtual.service.CorreoService;
 import com.biblioteca.virtual.service.UsuarioService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +19,17 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
-    // ¡AQUÍ ESTÁ LA SOLUCIÓN! Le damos acceso al Dao en este controlador
     @Autowired
     private com.biblioteca.virtual.dao.UsuarioDao usuarioDao;
 
-    // Patrón sencillo para validar formato de correo (HU-02 y HU-04)
+    // Patrón sencillo para validar formato de correo
     private static final String PATRON_CORREO = "^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
+    
+    @Autowired
+    private org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CorreoService correoService;
 
     // ---------- LISTADO + CONSULTA (HU-03) ----------
     @GetMapping("/usuarios")
@@ -121,6 +127,7 @@ public class UsuarioController {
         }
 
         if (!modoEdicion) {
+            // Lógica para NUEVO usuario
             if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
                 model.addAttribute("mensaje", "Campos obligatorios");
                 model.addAttribute("modoEdicion", false);
@@ -137,13 +144,30 @@ public class UsuarioController {
                 return "usuario_form";
             }
 
+            // 1. Guardamos la contraseña original en una variable temporal para el correo
+            String rawPassword = usuario.getPassword();
+            
+            // 2. Encriptamos la contraseña para guardarla segura en la BD
+            usuario.setPassword(passwordEncoder.encode(rawPassword));
             usuario.setActivo(true);
+            
+            // 3. Guardamos el usuario
             usuarioService.save(usuario);
-            redirectAttributes.addFlashAttribute("mensaje", "Usuario registrado satisfactoriamente");
+            
+            // 4. Intentamos enviar el correo de bienvenida
+            try {
+                correoService.enviarCorreoBienvenida(usuario.getCorreo(), usuario.getNombre(), usuario.getUsername(), rawPassword);
+                redirectAttributes.addFlashAttribute("mensaje", "Usuario registrado y correo de bienvenida enviado.");
+            } catch (Exception e) {
+                log.error("Error enviando correo: " + e.getMessage());
+                redirectAttributes.addFlashAttribute("mensaje", "Usuario registrado correctamente (El correo no se pudo enviar).");
+            }
+
             redirectAttributes.addFlashAttribute("exito", true);
             return "redirect:/usuarios";
 
         } else {
+            // Lógica para ACTUALIZAR usuario existente
             Usuario existente = usuarioService.buscarPorIdentificacion(usuario.getIdentificacion());
             if (existente == null) {
                 model.addAttribute("mensaje", "No existe el usuario");
@@ -163,7 +187,9 @@ public class UsuarioController {
             existente.setTelefono(usuario.getTelefono());
             existente.setRol(usuario.getRol());
 
+            // Si es edición, no tocamos la contraseña aquí (se hace en otro módulo) ni mandamos correo
             usuarioService.save(existente);
+            
             redirectAttributes.addFlashAttribute("mensaje", "Usuario actualizado satisfactoriamente");
             redirectAttributes.addFlashAttribute("exito", true);
             return "redirect:/usuarios";
@@ -206,18 +232,18 @@ public class UsuarioController {
         if (esAdmin) {
             // Admin ve a todos los deudores
             morosos = usuarioService.getUsuarios().stream()
-                    .filter(u -> u.getMultaPendiente() != null && u.getMultaPendiente() > 0)
+                    .filter(u -> (u.getMultaPendiente() != null && u.getMultaPendiente() > 0) || (u.getMultaDanos() != null && u.getMultaDanos() > 0))
                     .collect(java.util.stream.Collectors.toList());
         } else {
             // Estudiante solo se ve a sí mismo si debe dinero
             morosos = new java.util.ArrayList<>();
-            if (usuarioActual.getMultaPendiente() != null && usuarioActual.getMultaPendiente() > 0) {
+            if ((usuarioActual.getMultaPendiente() != null && usuarioActual.getMultaPendiente() > 0) || (usuarioActual.getMultaDanos() != null && usuarioActual.getMultaDanos() > 0)) {
                 morosos.add(usuarioActual);
             }
         }
 
         model.addAttribute("morosos", morosos);
-        model.addAttribute("esAdmin", esAdmin); // Para ocultar el botón de pagar a los estudiantes
+        model.addAttribute("esAdmin", esAdmin); 
         return "multas";
     }
 
@@ -226,7 +252,7 @@ public class UsuarioController {
         Usuario usuario = usuarioService.buscarPorIdentificacion(identificacion);
         
         if (usuario != null) {
-            // El estudiante pagó, enceramos la deuda
+            // El estudiante pagó, enceramos ambas deudas (mora y daños)
             usuario.setMultaPendiente(0.0);
             usuario.setMultaDanos(0.0); 
             usuarioService.save(usuario);
