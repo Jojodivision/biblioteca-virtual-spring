@@ -41,7 +41,27 @@
 
             <div class="card shadow-sm">
                 <div class="card-body">
+                    
+                    <!-- Formulario de Carga Masiva (Multipart) -->
+                    <div class="card shadow p-3 mb-4 bg-white rounded" sec:authorize="hasAuthority('ROLE_ADMIN')">
+                        <h5 class="fw-bold mb-3">📚 Carga Masiva de Inventario (Lote CSV)</h5>
 
+                        <!-- el enctype="multipart/form-data" es obligatorio para poder subir archivos -->
+                        <form th:action="@{/admin/libros/cargar-csv}" method="post" enctype="multipart/form-data" class="d-flex align-items-center">
+
+                            <!-- accept=".csv" filtra visualmente los archivos en la ventana de carga del so -->
+                            <input type="file" name="archivo" class="form-control me-2" accept=".csv" required>
+
+                            <button type="submit" class="btn btn-success fw-bold text-nowrap">
+                                ⬆️ Subir Lote
+                            </button>
+                        </form>
+
+                        <small class="text-muted mt-2">
+                            * Solo se admiten archivos .csv estructurados exactamente con las columnas: <strong>titulo, autor, editorial, anio_publicacion, cantidad</strong>. Límite: 100 registros por lote.
+                        </small>
+                    </div>
+                    
                     <div th:if="${libros != null and !libros.empty}" class="table-responsive">
                         <table class="table table-hover table-striped align-middle">
                             <thead class="table-dark">
