@@ -56,17 +56,17 @@
 
                                 <!-- Multa por atraso -->
                                 <td class="text-warning fw-bold" th:text="${'₡' + #numbers.formatDecimal(usuario.multaPendiente != null ? usuario.multaPendiente : 0.0, 1, 'COMMA', 2, 'POINT')}"></td>
-                                
+
                                 <!-- Multa por daños -->
                                 <td class="text-danger fw-bold" th:text="${'₡' + #numbers.formatDecimal(usuario.multaDanos != null ? usuario.multaDanos : 0.0, 1, 'COMMA', 2, 'POINT')}"></td>
 
                                 <!-- Total Sumado -->
                                 <td class="text-danger fw-bold fs-5" th:text="${'₡' + #numbers.formatDecimal((usuario.multaPendiente != null ? usuario.multaPendiente : 0.0) + (usuario.multaDanos != null ? usuario.multaDanos : 0.0), 1, 'COMMA', 2, 'POINT')}"></td>
-                                
+
                                 <td>
-                                    <!-- Botón para normalizar cuenta -->
-                                    <form th:action="@{'/multas/normalizar/' + ${usuario.identificacion}}" method="post" onsubmit="return confirm('¿Confirmas que el estudiante canceló la deuda total? La cuenta será desbloqueada inmediatamente.');">
-                                        <button type="submit" class="btn btn-success fw-bold">💵 Recibir Pago & Normalizar</button>
+                                    <!-- El th:if hace que este bloque de HTML solo exista si el usuario es Admin -->
+                                    <form th:if="${esAdmin}" th:action="@{'/multas/normalizar/' + ${moroso.identificacion}}" method="post" class="d-inline" onsubmit="return confirm('¿Confirmas que el estudiante pagó la totalidad de la deuda?');">
+                                        <button type="submit" class="btn btn-success btn-sm fw-bold">💰 Registrar Pago</button>
                                     </form>
                                 </td>
                             </tr>
