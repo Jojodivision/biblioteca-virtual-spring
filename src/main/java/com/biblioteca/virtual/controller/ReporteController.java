@@ -1,6 +1,7 @@
 package com.biblioteca.virtual.controller;
 
 import com.biblioteca.virtual.dao.PrestamoDao;
+import com.biblioteca.virtual.dao.UsuarioDao;
 import com.biblioteca.virtual.service.ReporteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -22,8 +24,18 @@ public class ReporteController {
     @Autowired
     private ReporteService reporteService;
 
+    @Autowired
+    private UsuarioDao usuarioDao;
+
+    private boolean noEsAdmin(Principal principal) {
+        if (principal == null) return true;
+        com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
+        return usuario == null || !"ROLE_ADMIN".equals(usuario.getRol());
+    }
+
     @GetMapping("/reportes")
-    public String vistaReportes() {
+    public String vistaReportes(Principal principal) {
+        if (noEsAdmin(principal)) return "redirect:/";
         return "reportes"; // llama a la vista html
     }
 
@@ -32,7 +44,10 @@ public class ReporteController {
             @RequestParam("fechaInicio") String fechaInicio,
             @RequestParam("fechaFin") String fechaFin,
             @RequestParam("formato") String formato,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes,
+            Principal principal) {
+
+        if (noEsAdmin(principal)) return "redirect:/";
 
         LocalDate inicio = LocalDate.parse(fechaInicio);
         LocalDate fin = LocalDate.parse(fechaFin);

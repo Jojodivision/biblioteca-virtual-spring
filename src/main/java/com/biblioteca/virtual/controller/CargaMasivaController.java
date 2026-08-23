@@ -1,11 +1,13 @@
 package com.biblioteca.virtual.controller;
 
+import com.biblioteca.virtual.dao.UsuarioDao;
 import com.biblioteca.virtual.service.CargaMasivaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.security.Principal;
 
 @Controller
 @RequestMapping("/admin/libros")
@@ -14,8 +16,17 @@ public class CargaMasivaController {
     @Autowired
     private CargaMasivaService cargaMasivaService;
 
+    @Autowired
+    private UsuarioDao usuarioDao;
+
     @PostMapping("/cargar-csv")
-    public String cargarLibrosPorLote(@RequestParam("archivo") MultipartFile archivo, RedirectAttributes redirectAttributes) {
+    public String cargarLibrosPorLote(@RequestParam("archivo") MultipartFile archivo, RedirectAttributes redirectAttributes, Principal principal) {
+
+        if (principal == null) return "redirect:/login";
+        com.biblioteca.virtual.domain.Usuario usuario = usuarioDao.findByUsername(principal.getName());
+        if (usuario == null || !"ROLE_ADMIN".equals(usuario.getRol())) {
+            return "redirect:/";
+        }
 
         // validar que el archivo no venga vacio
         if (archivo.isEmpty()) {
