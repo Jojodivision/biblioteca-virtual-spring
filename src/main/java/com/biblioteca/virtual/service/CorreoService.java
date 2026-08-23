@@ -13,7 +13,7 @@ public class CorreoService {
 
     public void enviarCorreoBienvenida(String destinatario, String nombre, String username, String rawPassword) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom("TU_CORREO@gmail.com"); // El mismo que pusiste en properties
+        mensaje.setFrom("josqff@gmail.com"); 
         mensaje.setTo(destinatario);
         mensaje.setSubject("¡Bienvenido a la Biblioteca Virtual! 📚");
         
@@ -29,4 +29,21 @@ public class CorreoService {
         mensaje.setText(contenido);
         mailSender.send(mensaje);
     }
+    public void enviarCorreo2FA(String destinatario, String codigo) {
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setFrom("josqff@gmail.com");
+        mensaje.setTo(destinatario);
+        mensaje.setSubject("Código de Seguridad 2FA - Biblioteca Virtual 🔐");
+
+        String contenido = "Hola Administrador,\n\n"
+                + "Se ha detectado un inicio de sesión exitoso con tus credenciales.\n"
+                + "Tu código de verificación de un solo uso (OTP) es: " + codigo + "\n\n"
+                + "Por favor, ingresa este código en la pantalla del sistema para continuar.\n"
+                + "Si no solicitaste este acceso, por favor revisa la seguridad de tu cuenta.\n\n"
+                + "Sistema de Biblioteca Virtual.";
+
+        mensaje.setText(contenido);
+        mailSender.send(mensaje);
+    }
 }
+
