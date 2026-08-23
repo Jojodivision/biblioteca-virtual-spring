@@ -13,7 +13,7 @@ public class CorreoService {
 
     public void enviarCorreoBienvenida(String destinatario, String nombre, String username, String rawPassword) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom("TU_CORREO@gmail.com"); // El mismo que pusiste en properties
+        mensaje.setFrom("josqff@gmail.com"); 
         mensaje.setTo(destinatario);
         mensaje.setSubject("¡Bienvenido a la Biblioteca Virtual! 📚");
         
@@ -31,7 +31,7 @@ public class CorreoService {
     }
     public void enviarCorreo2FA(String destinatario, String codigo) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom("TU_CORREO@gmail.com"); // el mismo correo que ya tenemos configurado en application.properties
+        mensaje.setFrom("josqff@gmail.com");
         mensaje.setTo(destinatario);
         mensaje.setSubject("Código de Seguridad 2FA - Biblioteca Virtual 🔐");
 
