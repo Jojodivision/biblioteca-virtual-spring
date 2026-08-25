@@ -65,7 +65,7 @@
 
                                 <td>
                                     <!-- El th:if hace que este bloque de HTML solo exista si el usuario es Admin -->
-                                    <form th:if="${esAdmin}" th:action="@{'/multas/normalizar/' + ${moroso.identificacion}}" method="post" class="d-inline" onsubmit="return confirm('¿Confirmas que el estudiante pagó la totalidad de la deuda?');">
+                                    <form th:if="${esAdmin}" th:action="@{'/multas/normalizar/' + ${usuario.identificacion}}" method="post" class="d-inline" onsubmit="return confirm('¿Confirmas que el estudiante pagó la totalidad de la deuda?');">
                                         <button type="submit" class="btn btn-success btn-sm fw-bold">💰 Registrar Pago</button>
                                     </form>
                                 </td>

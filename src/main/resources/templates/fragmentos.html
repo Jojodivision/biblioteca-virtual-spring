@@ -1,39 +1,49 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<body>
+    <body>
 
-    <!-- Definimos la pieza maestra que importaremos en las demás pantallas -->
-    <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/">📚 Biblioteca Virtual</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item me-3"><a class="nav-link text-white fw-bold" th:href="@{/prestamos}">🔖 Préstamos</a></li>
-                    <li class="nav-item me-3"><a class="nav-link text-white fw-bold" th:href="@{/encargos}">📦 Encargos</a></li>
-                    <li class="nav-item me-3"><a class="nav-link text-danger fw-bold" th:href="@{/multas}">💰 Mis Multas</a></li>
-                    
-                    <!-- Menú desplegable para el Admin -->
-                    <li class="nav-item dropdown me-3" sec:authorize="hasAuthority('ROLE_ADMIN')">
-                        <a class="nav-link dropdown-toggle text-warning fw-bold text-decoration-underline" href="#" role="button" data-bs-toggle="dropdown">
-                            ⚙️ Administración
-                        </a>
-                        <ul class="dropdown-menu shadow">
-                            <li><a class="dropdown-item fw-bold" th:href="@{/admin/reportes}">Reportes y Estadísticas</a></li>
-                            <li><a class="dropdown-item fw-bold" th:href="@{/usuarios}">Gestión de Usuarios</a></li>
-                            <li><a class="dropdown-item fw-bold text-primary" th:href="@{/configuracion}">Reglas de Negocio</a></li>
-                        </ul>
-                    </li>
-                    
-                    <li class="nav-item me-3"><a class="nav-link text-white fw-bold" th:href="@{/perfil}">👤 Mi Perfil</a></li>
-                    <li class="nav-item ms-3">
-                        <form th:action="@{/logout}" method="post" class="m-0">
-                            <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent">🚪 Salir</button>
-                        </form>
-                    </li>
-                </ul>
+        <!-- Definimos la pieza maestra que importaremos en las demás pantallas -->
+        <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-primary mb-4 shadow-sm">
+            <div class="container">
+                <!-- Título principal -->
+                <a class="navbar-brand fw-bold" href="/">📚 <span th:text="#{titulo.bienvenida}">Biblioteca Virtual</span></a>
+
+                <div class="collapse navbar-collapse">
+                    <ul class="navbar-nav ms-auto align-items-center">
+
+                        <li class="nav-item me-3"><a class="nav-link text-white fw-bold" th:href="@{/prestamos}">🔖 <span th:text="#{nav.prestamos}">Préstamos</span></a></li>
+                        <li class="nav-item me-3"><a class="nav-link text-white fw-bold" th:href="@{/encargos}">📦 <span th:text="#{nav.encargos}">Encargos</span></a></li>
+                        <li class="nav-item me-3"><a class="nav-link text-danger fw-bold" th:href="@{/multas}">💰 <span th:text="#{nav.multas}">Mis Multas</span></a></li>
+
+                        <!-- Menú desplegable para el Admin -->
+                        <li class="nav-item dropdown me-3" sec:authorize="hasAuthority('ROLE_ADMIN')">
+                            <a class="nav-link dropdown-toggle text-warning fw-bold text-decoration-underline" href="#" role="button" data-bs-toggle="dropdown">
+                                ⚙️ <span th:text="#{nav.admin}">Administración</span>
+                            </a>
+                            <ul class="dropdown-menu shadow">
+                                <li><a class="dropdown-item fw-bold" th:href="@{/admin/reportes}"><span th:text="#{nav.reportes}">Reportes y Estadísticas</span></a></li>
+                                <li><a class="dropdown-item fw-bold" th:href="@{/usuarios}"><span th:text="#{nav.usuarios}">Gestión de Usuarios</span></a></li>
+                                <li><a class="dropdown-item fw-bold text-primary" th:href="@{/configuracion}"><span th:text="#{nav.reglas}">Reglas de Negocio</span></a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item me-3"><a class="nav-link text-white fw-bold" th:href="@{/perfil}">👤 <span th:text="#{nav.perfil}">Mi Perfil</span></a></li>
+
+                        <!-- Selector de Idiomas (i18n) -->
+                        <li class="nav-item d-flex ms-2 me-3 border-start border-end px-3 border-light border-opacity-25">
+                            <a href="?lang=es" class="btn btn-sm btn-outline-light me-1 fw-bold" title="Español">🇪🇸 ES</a>
+                            <a href="?lang=en" class="btn btn-sm btn-outline-light fw-bold" title="English">🇺🇸 EN</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button type="submit" class="nav-link text-danger fw-bold border-0 bg-transparent">🚪 <span th:text="#{nav.salir}">Salir</span></button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-</body>
+    </body>
 </html>

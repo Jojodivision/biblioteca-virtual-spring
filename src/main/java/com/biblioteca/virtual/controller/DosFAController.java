@@ -27,6 +27,7 @@ public class DosFAController {
             // generar codigo aleatorio de 6 digitos
             String codigo = String.format("%06d", new Random().nextInt(999999));
             session.setAttribute("codigo_2fa", codigo);
+            System.out.println("🚨 ATENCIÓN - CÓDIGO 2FA DEL ADMIN: " + codigo);
 
             // buscar el correo actualizado del admin en la BD
             Usuario admin = usuarioDao.findByUsername(principal.getName());
